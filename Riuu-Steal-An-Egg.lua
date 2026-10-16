@@ -8,6 +8,85 @@ local function RiuuIsOwner()
 	return lp ~= nil and string.lower(tostring(lp.Name)) == string.lower(RIUU_OWNER)
 end
 
+-- ==== Riuu logo (embedded base64, decoded via getcustomasset) ====
+RIUU_LOGO_DATA = "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"
+
+function RiuuLogoApply(label)
+	if typeof(label) ~= "Instance" then
+		return false
+	end
+
+	label.BackgroundTransparency = 1
+
+	local loaded = false
+
+	pcall(function()
+		if type(writefile) == "function" and type(getcustomasset) == "function" and type(RIUU_LOGO_DATA) == "string" and #RIUU_LOGO_DATA > 100 then
+			local bin = RIUU_LOGO_BIN
+
+			if type(bin) ~= "string" or #bin < 100 then
+				local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+				local lookup = {}
+
+				for i = 1, #chars do
+					lookup[string.byte(chars, i)] = i - 1
+				end
+
+				local out = {}
+				local n = 0
+				local acc = 0
+				local bits = 0
+
+				for i = 1, #RIUU_LOGO_DATA do
+					local v = lookup[string.byte(RIUU_LOGO_DATA, i)]
+
+					if v then
+						acc = acc * 64 + v
+						bits = bits + 6
+
+						if bits >= 8 then
+							bits = bits - 8
+							n = n + 1
+							out[n] = string.char(math.floor(acc / 2 ^ bits) % 256)
+							acc = acc % 2 ^ bits
+						end
+					end
+				end
+
+				bin = table.concat(out)
+				RIUU_LOGO_BIN = bin
+			end
+
+			pcall(writefile, "RiuuMark.png", bin)
+
+			local asset = getcustomasset("RiuuMark.png")
+
+			if asset then
+				label.Image = asset
+				loaded = true
+			end
+		end
+	end)
+
+	if not loaded then
+		local f = label:FindFirstChild("RiuuLogoFallback")
+
+		if not f then
+			f = Instance.new("TextLabel")
+			f.Name = "RiuuLogoFallback"
+			f.BackgroundTransparency = 1
+			f.Size = UDim2.fromScale(1, 1)
+			f.Font = Enum.Font.GothamBlack
+			f.TextScaled = true
+			f.TextColor3 = Color3.fromRGB(0, 120, 255)
+			f.Text = "R"
+			f.Parent = label
+		end
+	end
+
+	return loaded
+end
+
 -- ==== Riuu UI Library (Simple & Aesthetic) ====
 local function RiuuCreateUI()
 	local Tween = game:GetService("TweenService")
@@ -476,7 +555,7 @@ end
 			SavedAt = os.time(),
 			SavedBy = (Players.LocalPlayer and Players.LocalPlayer.Name) or "",
 			Ui = sanitizeForJson(cfg),
-			Sena = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
+			Riuu = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
 		}
 		local written = false
 		pcall(function()
@@ -516,8 +595,8 @@ end
 				end
 			end
 		end
-		if type(profile.Sena) == "table" and type(Lib._configTable) == "table" then
-			for k, v in pairs(profile.Sena) do
+		if type(profile.Riuu) == "table" and type(Lib._configTable) == "table" then
+			for k, v in pairs(profile.Riuu) do
 				if type(Lib._configTable[k]) == type(v) then
 					if type(v) == "table" then
 						local copy = {}
@@ -555,6 +634,43 @@ end
 		return text
 	end
 
+	local CHAT_MARKER = "\226\128\139"
+	local function sendGameChat(text)
+		text = tostring(text or "")
+		if text:gsub("%s+", "") == "" then return false end
+		local sent = false
+		pcall(function()
+			local tcs = game:GetService("TextChatService")
+			local channels = tcs:FindFirstChild("TextChannels")
+			local general = channels and channels:FindFirstChild("RBXGeneral")
+			if general then
+				general:SendAsync(text)
+				sent = true
+			end
+		end)
+		if not sent then
+			pcall(function()
+				local bar = game:GetService("TextChatService"):FindFirstChild("ChatInputBarConfiguration")
+				local target = bar and bar:FindFirstChild("TargetTextChannel")
+				if target then
+					target:SendAsync(text)
+					sent = true
+				end
+			end)
+		end
+		if not sent then
+			pcall(function()
+				local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+				local say = events and events:FindFirstChild("SayMessageRequest")
+				if say then
+					say:FireServer(text, "All")
+					sent = true
+				end
+			end)
+		end
+		return sent
+	end
+
 	local function makeLiveChat(parent, cfg)
 		cfg = cfg or {}
 		local height = math.clamp(tonumber(cfg.Height) or 330, 240, 560)
@@ -567,6 +683,7 @@ end
 		local messages = {}
 		local msgSeq = 0
 		local lastKey, lastTime = nil, 0
+		local riuuSeen = {}
 
 		local roomNames = {"General", "Indonesian", "Philippines", "Vietnam", "Brazilian"}
 		local langWords = {
@@ -676,7 +793,13 @@ end
 			onChip.Text = state.on and "Chat On" or "Chat Off"
 			onChip.TextColor3 = state.on and theme.success or theme.danger
 			hiddenChip.TextColor3 = state.hidden and theme.warn or theme.subtext
-			onlineChip.Text = string.format("%d in server", #Players:GetPlayers())
+			local now = os.clock()
+			for seenName, seenAt in pairs(riuuSeen) do
+				if now - seenAt > 120 then riuuSeen[seenName] = nil end
+			end
+			local riuuCount = 1
+			for _ in pairs(riuuSeen) do riuuCount = riuuCount + 1 end
+			onlineChip.Text = string.format("%d using Riuu", riuuCount)
 		end
 
 		onChip.MouseButton1Click:Connect(function()
@@ -706,6 +829,12 @@ end
 		local function addMessage(author, text)
 			author = tostring(author or "?")
 			text = tostring(text or "")
+			if text:sub(-3) == CHAT_MARKER then
+				if author ~= myName then
+					riuuSeen[author] = os.clock()
+				end
+				text = text:sub(1, -4)
+			end
 			if text == "" then return end
 			local key = author .. "|" .. text
 			local now = os.clock()
@@ -728,22 +857,10 @@ end
 			if type(text) ~= "string" or text:gsub("%s+", "") == "" then return end
 			box.Text = ""
 			task.spawn(function()
-				local sent = false
-				pcall(function()
-					local channels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
-					local general = channels and channels:FindFirstChild("RBXGeneral")
-					if general then
-						general:SendAsync(text)
-						sent = true
-					end
-				end)
+				local sent = sendGameChat(text .. CHAT_MARKER)
 				if not sent then
 					pcall(function()
-						local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-						local say = events and events:FindFirstChild("SayMessageRequest")
-						if say then
-							say:FireServer(text, "All")
-						end
+						Lib:Notify({ Title = "Live Chat", Content = "Message not sent — this game uses a custom chat system." })
 					end)
 				end
 			end)
@@ -784,6 +901,12 @@ end
 			pcall(function()
 				Players.PlayerAdded:Connect(function() updateChips() end)
 				Players.PlayerRemoving:Connect(function() updateChips() end)
+			end)
+			task.spawn(function()
+				while card.Parent do
+					task.wait(30)
+					updateChips()
+				end
 			end)
 			addMessage("Riuu", "Welcome to Riuu Live Chat. General mirrors this server's in-game chat; the other rooms group messages by detected language.")
 			updateChips()
@@ -1157,7 +1280,7 @@ end
 				SavedAt = os.time(),
 				SavedBy = (Players.LocalPlayer and Players.LocalPlayer.Name) or "",
 				Ui = sanitizeForJson(cfg),
-				Sena = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
+				Riuu = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
 			}
 			local json = HttpService:JSONEncode(profile)
 			local ok = pcall(function() setclipboard(json) end)
@@ -1193,8 +1316,8 @@ end
 				end
 				applied = true
 			end
-			if type(data.Sena) == "table" and type(Lib._configTable) == "table" then
-				for k, v in pairs(data.Sena) do
+			if type(data.Riuu) == "table" and type(Lib._configTable) == "table" then
+				for k, v in pairs(data.Riuu) do
 					if type(Lib._configTable[k]) == type(v) then
 						if type(v) == "table" then
 							local copy = {}
@@ -1210,7 +1333,7 @@ end
 				applied = true
 			end
 			if not applied then
-				Lib:Notify({ Title = "Config", Content = "JSON had no Ui/Sena sections — nothing imported." })
+				Lib:Notify({ Title = "Config", Content = "JSON had no Ui/Riuu sections — nothing imported." })
 			else
 				Lib:Notify({ Title = "Config", Content = "External config imported." })
 			end
@@ -1249,25 +1372,7 @@ end
 			text = tostring(text or "")
 			if text:gsub("%s+", "") == "" then return end
 			task.spawn(function()
-				local sent = false
-				pcall(function()
-					local channels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
-					local general = channels and channels:FindFirstChild("RBXGeneral")
-					if general then
-						general:SendAsync(text)
-						sent = true
-					end
-				end)
-				if not sent then
-					pcall(function()
-						local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-						local say = events and events:FindFirstChild("SayMessageRequest")
-						if say then
-							say:FireServer(text, "All")
-							sent = true
-						end
-					end)
-				end
+				local sent = sendGameChat(text .. CHAT_MARKER)
 				notify(sent and "Announcement sent to chat." or "Could not send chat message.")
 			end)
 		end
@@ -1381,8 +1486,8 @@ end
 				n = math.clamp(math.floor(n), 1, 999)
 				local ge = (getgenv and getgenv() or _G)
 				local ok = false
-				if typeof(ge.__SenaV4SetCapFps) == "function" then
-					ok = pcall(ge.__SenaV4SetCapFps, n) == true
+				if typeof(ge.__RiuuV4SetCapFps) == "function" then
+					ok = pcall(ge.__RiuuV4SetCapFps, n) == true
 				end
 				if not ok and typeof(setfpscap) == "function" then
 					ok = pcall(setfpscap, n)
@@ -1516,7 +1621,7 @@ end
 		mk("Frame", {Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BorderSizePixel=0, LayoutOrder=1, Parent=card})
 		local content = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=2, Parent=card})
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=content})
-		local expanded = not startCollapsed
+		local expanded = startCollapsed == true
 		local function applySectionState()
 			content.Visible = expanded
 			chevron.Rotation = expanded and 90 or 0
@@ -1558,7 +1663,7 @@ end
 		cfg = cfg or {}
 		cfgLoad()
 		local gui = mk("ScreenGui", {Name="RiuuHubGui", ResetOnSpawn=false, DisplayOrder=500, IgnoreGuiInset=false, ZIndexBehavior=Enum.ZIndexBehavior.Sibling}, (gethui and gethui()) or Players.LocalPlayer:FindFirstChildOfClass("PlayerGui"))
-		local main = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 860, 0, 540), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Active=true, Parent=gui})
+		local main = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 680, 0, 430), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Active=true, Parent=gui})
 		round(main, 14)
 		local header = mk("Frame", {Size=UDim2.new(1, 0, 0, 40), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Parent=main})
 		mk("Frame", {Size=UDim2.new(1, 0, 0, 1), Position=UDim2.new(0, 0, 1, -1), BackgroundColor3=theme.stroke, BorderSizePixel=0, Parent=header})
@@ -1573,16 +1678,24 @@ end
 		minBtn.MouseLeave:Connect(function() minBtn.TextColor3 = theme.subtext end)
 		closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = theme.accent end)
 		closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = theme.text end)
-		local tabBar = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 41), Size=UDim2.new(1, 0, 0, 25), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=0, ScrollBarImageTransparency=1, CanvasSize=UDim2.new(0, 0, 0, 0), ScrollingDirection=Enum.ScrollingDirection.X, Parent=main})
+		local tabBar = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 41), Size=UDim2.new(1, 0, 0, 25), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=0, ScrollBarImageTransparency=1, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.X, ScrollingDirection=Enum.ScrollingDirection.X, Parent=main})
 		mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=tabBar})
+		tabBar.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseWheel then
+				local maxScroll = math.max(0, tabBar.AbsoluteCanvasSize.X - tabBar.AbsoluteWindowSize.X)
+				if maxScroll > 0 then
+					tabBar.CanvasPosition = Vector2.new(math.clamp(tabBar.CanvasPosition.X - input.Position.Z, 0, maxScroll), 0)
+				end
+			end
+		end)
 		mk("Frame", {Position=UDim2.new(0, 0, 0, 65), Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BorderSizePixel=0, Parent=main})
 		local body = mk("Frame", {Position=UDim2.new(0, 0, 0, 66), Size=UDim2.new(1, 0, 1, -98), BackgroundTransparency=1, Parent=main})
 		local holder = mk("Frame", {Size=UDim2.new(1, 0, 1, 0), BackgroundTransparency=1, Parent=body})
 		do
 			local footer = mk("Frame", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 0, 1, 0), Size=UDim2.new(1, 0, 0, 32), BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=main})
 			mk("Frame", {Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BackgroundTransparency=0.4, BorderSizePixel=0, Parent=footer})
-			mk("TextLabel", {Position=UDim2.new(0, 12, 0, 0), Size=UDim2.new(0, 320, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text="RIUU HUB  ·  Welcome, " .. tostring(Players.LocalPlayer and Players.LocalPlayer.Name or "Player"), Parent=footer})
-			local chipHolder = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -10, 0.5, 0), Size=UDim2.new(0, 430, 1, 0), BackgroundTransparency=1, Parent=footer})
+			mk("TextLabel", {Position=UDim2.new(0, 12, 0, 0), Size=UDim2.new(0, 240, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text="RIUU HUB  ·  Welcome, " .. tostring(Players.LocalPlayer and Players.LocalPlayer.Name or "Player"), Parent=footer})
+			local chipHolder = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -10, 0.5, 0), Size=UDim2.new(0, 340, 1, 0), BackgroundTransparency=1, Parent=footer})
 			mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, HorizontalAlignment=Enum.HorizontalAlignment.Right, VerticalAlignment=Enum.VerticalAlignment.Center, Padding=UDim.new(0, 6), Parent=chipHolder})
 			local function footerChip(text)
 				return mk("TextLabel", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=10, TextColor3=theme.subtext, Text=text, Parent=chipHolder})
@@ -1686,10 +1799,34 @@ end
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 			end)
 		end
-		local pill = mk("TextButton", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 16, 1, -16), Size=UDim2.new(0, 110, 0, 34), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.text, Text="Riuu Hub", Visible=false, AutoButtonColor=false, ZIndex=50, Parent=gui})
-		round(pill, 17); hoverTween(pill)
-		pill.MouseButton1Click:Connect(function() main.Visible = true; pill.Visible = false end)
-		minBtn.MouseButton1Click:Connect(function() main.Visible = false; pill.Visible = true end)
+		local pill = mk("ImageButton", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0, 64, 0.5, 0), Size=UDim2.new(0, 56, 0, 56), BackgroundTransparency=1, Image="", Visible=true, AutoButtonColor=false, ZIndex=50, Parent=gui})
+		pcall(function() RiuuLogoApply(pill) end)
+		do
+			local dragOn, dragStart, dragOrigin, dragMoved = false, nil, nil, false
+			pill.InputBegan:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					dragOn, dragStart, dragOrigin, dragMoved = true, input.Position, pill.Position, false
+				end
+			end)
+			pill.InputChanged:Connect(function(input)
+				if dragOn and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+					local delta = input.Position - dragStart
+					if not dragMoved and math.abs(delta.X) + math.abs(delta.Y) > 6 then dragMoved = true end
+					if dragMoved then
+						pill.Position = UDim2.new(dragOrigin.X.Scale, dragOrigin.X.Offset + delta.X, dragOrigin.Y.Scale, dragOrigin.Y.Offset + delta.Y)
+					end
+				end
+			end)
+			pill.InputEnded:Connect(function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if dragOn and not dragMoved then
+						main.Visible = not main.Visible
+					end
+					dragOn = false
+				end
+			end)
+		end
+		minBtn.MouseButton1Click:Connect(function() main.Visible = false end)
 		closeBtn.MouseButton1Click:Connect(function() pcall(function() gui:Destroy() end) end)
 		return win
 	end
@@ -1740,7 +1877,7 @@ local RunService = game:GetService("RunService")
 game:GetService("TweenService")
 
 local TeleportService = game:GetService("TeleportService")
-local v14, genv, v16, __SenaV4TweenRuntimeGeneration, t1, v19, v20, v21, v22, v23
+local v14, genv, v16, __RiuuV4TweenRuntimeGeneration, t1, v19, v20, v21, v22, v23
 local v24, v25, v26, v27, v28, v29, v30, v31, v32, v33
 
 do
@@ -1751,30 +1888,30 @@ do
 	end
 	genv = getgenv and getgenv() or _G
 
-	if type(genv.__SenaV4HubShutdown) == "function" then
-		pcall(genv.__SenaV4HubShutdown)
+	if type(genv.__RiuuV4HubShutdown) == "function" then
+		pcall(genv.__RiuuV4HubShutdown)
 	end
 
 	local t2 = {}
 
-	genv.__SenaV4HubSession = t2
+	genv.__RiuuV4HubSession = t2
 	v16 = function()
-		return genv.__SenaV4HubSession == t2
+		return genv.__RiuuV4HubSession == t2
 	end
-	genv.__SenaV4IdentityGetter = genv.getthreadidentity or genv.get_thread_identity or genv.getidentity or genv.getthreadcontext or genv.get_thread_context
-	genv.__SenaV4IdentitySetter = genv.setthreadidentity or genv.set_thread_identity or genv.setidentity or genv.setthreadcontext or genv.set_thread_context
+	genv.__RiuuV4IdentityGetter = genv.getthreadidentity or genv.get_thread_identity or genv.getidentity or genv.getthreadcontext or genv.get_thread_context
+	genv.__RiuuV4IdentitySetter = genv.setthreadidentity or genv.set_thread_identity or genv.setidentity or genv.setthreadcontext or genv.set_thread_context
 
-	local __SenaV4IdentitySetter = genv.__SenaV4IdentitySetter
+	local __RiuuV4IdentitySetter = genv.__RiuuV4IdentitySetter
 
-	if type(__SenaV4IdentitySetter) == "function" then
-		pcall(__SenaV4IdentitySetter, 8)
-		genv.__SenaV4UICapabilityIdentity = 8
+	if type(__RiuuV4IdentitySetter) == "function" then
+		pcall(__RiuuV4IdentitySetter, 8)
+		genv.__RiuuV4UICapabilityIdentity = 8
 	end
 
 	if not (rawget(_G, "setfpscap") or rawget(_G, "set_fps_cap")) and type(setfpscap) == "function" then
 	end
 
-	genv.__SenaV4SetCapFps = function(p1)
+	genv.__RiuuV4SetCapFps = function(p1)
 		local v37 = math.clamp(math.floor(tonumber(p1) or 240), 1, 999)
 		local setfpscap_ = rawget(_G, "setfpscap") or rawget(_G, "set_fps_cap") or type(setfpscap) == "function" and setfpscap
 
@@ -1785,24 +1922,24 @@ do
 		return false
 	end
 
-	if type(genv.__SenaV4TweenRuntimeCleanup) == "function" then
-		pcall(genv.__SenaV4TweenRuntimeCleanup)
+	if type(genv.__RiuuV4TweenRuntimeCleanup) == "function" then
+		pcall(genv.__RiuuV4TweenRuntimeCleanup)
 	end
 
-	if type(genv.__SenaV4EggRuntimeCleanup) == "function" then
-		pcall(genv.__SenaV4EggRuntimeCleanup)
+	if type(genv.__RiuuV4EggRuntimeCleanup) == "function" then
+		pcall(genv.__RiuuV4EggRuntimeCleanup)
 	end
 
-	if type(genv.__SenaV4AntiGuardCleanup) == "function" then
-		pcall(genv.__SenaV4AntiGuardCleanup)
+	if type(genv.__RiuuV4AntiGuardCleanup) == "function" then
+		pcall(genv.__RiuuV4AntiGuardCleanup)
 	end
 
-	genv.__SenaV4TweenRuntimeGeneration = (genv.__SenaV4TweenRuntimeGeneration or 0) + 1
-	__SenaV4TweenRuntimeGeneration = genv.__SenaV4TweenRuntimeGeneration
+	genv.__RiuuV4TweenRuntimeGeneration = (genv.__RiuuV4TweenRuntimeGeneration or 0) + 1
+	__RiuuV4TweenRuntimeGeneration = genv.__RiuuV4TweenRuntimeGeneration
 	t1 = {
-		KEY = "__SenaV4StealAnEggMovementSpoof",
+		KEY = "__RiuuV4StealAnEggMovementSpoof",
 		VERSION = 436,
-		INTEGRITY_KEY = "__SenaV4StealAnEggIntegritySpoof",
+		INTEGRITY_KEY = "__RiuuV4StealAnEggIntegritySpoof",
 		SIGNAL = "ClientCharacter: GetDebugSnapshot",
 		HEADROOM = 1.35,
 		CLAMP = 0.15,
@@ -1859,7 +1996,7 @@ do
 
 	local function v57()
 		for _, child in ipairs(Workspace:GetChildren()) do
-			if child:IsA("BasePart") and child.Name == "__SenaV4HoverPad" and child ~= u51 then
+			if child:IsA("BasePart") and child.Name == "__RiuuV4HoverPad" and child ~= u51 then
 				pcall(child.Destroy, child)
 			end
 		end
@@ -1886,7 +2023,7 @@ do
 		return true
 	end
 	v22 = function()
-		if not u51 or not u51.Parent or u51:GetAttribute("SenaV4RuntimeOwner") ~= v52 then
+		if not u51 or not u51.Parent or u51:GetAttribute("RiuuV4RuntimeOwner") ~= v52 then
 			v57()
 
 			if u51 and u51.Parent then
@@ -1895,8 +2032,8 @@ do
 
 			local Part = Instance.new("Part")
 
-			Part.Name = "__SenaV4HoverPad"
-			Part:SetAttribute("SenaV4RuntimeOwner", v52)
+			Part.Name = "__RiuuV4HoverPad"
+			Part:SetAttribute("RiuuV4RuntimeOwner", v52)
 			Part.Anchored = true
 			Part.CanCollide = true
 			Part.CanQuery = true
@@ -2008,7 +2145,7 @@ do
 		v23()
 	end
 
-	genv.__SenaV4TweenRuntimeCleanup = function()
+	genv.__RiuuV4TweenRuntimeCleanup = function()
 		for _, v in pairs(t3) do
 			if type(v) == "table" then
 				v.cancelled = true
@@ -2377,7 +2514,7 @@ do
 		end
 
 		connection3 = RunService.PreSimulation:Connect(function()
-			if genv.__SenaV4TweenRuntimeGeneration ~= __SenaV4TweenRuntimeGeneration then
+			if genv.__RiuuV4TweenRuntimeGeneration ~= __RiuuV4TweenRuntimeGeneration then
 				local v142 = connection3
 
 				connection3 = nil
@@ -2419,7 +2556,7 @@ do
 		v139()
 	end
 
-	genv.__SenaV4TweenRuntimeCleanup = function()
+	genv.__RiuuV4TweenRuntimeCleanup = function()
 		v68()
 		v147()
 	end
@@ -2546,7 +2683,7 @@ local senaV4Config = {
 	ScrambleTradeInReroll = false,
 	ScrambleTradeInBanners = {},
 	ScrambleBossAuto = false,
-	StealMode = "Fly",
+	StealMode = "Instant",
 	FlyAerial = false,
 	StealHoldSeconds = 5,
 	StealAreas = { "None" },
@@ -2664,7 +2801,7 @@ local AreaEggResetWall = require(game:GetService("ReplicatedStorage").Client.Are
 
 AreaEggResetWall.IsClosed = AreaEggResetWall.IsSealed
 v20 = function()
-	if genv.__SenaV4AdminBoost == true then
+	if genv.__RiuuV4AdminBoost == true then
 		return 4000
 	end
 
@@ -2822,9 +2959,9 @@ local function v198()
 		return false
 	end
 
-	local __SenaV4DronesWantCharacter = genv.__SenaV4DronesWantCharacter
+	local __RiuuV4DronesWantCharacter = genv.__RiuuV4DronesWantCharacter
 
-	if __SenaV4DronesWantCharacter and __SenaV4DronesWantCharacter() then
+	if __RiuuV4DronesWantCharacter and __RiuuV4DronesWantCharacter() then
 		return false
 	end
 
@@ -2848,8 +2985,8 @@ do
 
 			local s1 = ""
 
-			if typeof(readfile) == "function" and typeof(isfile) == "function" and isfile("Sena_Disconnect_Log.txt") then
-				s1 = readfile("Sena_Disconnect_Log.txt") or ""
+			if typeof(readfile) == "function" and typeof(isfile) == "function" and isfile("Riuu_Disconnect_Log.txt") then
+				s1 = readfile("Riuu_Disconnect_Log.txt") or ""
 			end
 
 			local t5 = {}
@@ -2866,7 +3003,7 @@ do
 				table.remove(t5, 1)
 			end
 
-			writefile("Sena_Disconnect_Log.txt", table.concat(t5, "\n"))
+			writefile("Riuu_Disconnect_Log.txt", table.concat(t5, "\n"))
 		end)
 	end
 end
@@ -3087,7 +3224,7 @@ local function v232(p54, p55, p56, p57, p58, p59, p60)
 
 	local v237 = p60 and math.max(p54.Position.Y, p56.Position.Y + 5, vector3.Y + 5) or nil
 	local v238 = v237 and cFrameNew(p56.Position.X, v237, p56.Position.Z) * p56.Rotation or p56
-	local v239 = math.clamp(v20(), t1.MIN_SPEED, genv.__SenaV4AdminBoost == true and 3000 or t1.MAX_SPEED)
+	local v239 = math.clamp(v20(), t1.MIN_SPEED, genv.__RiuuV4AdminBoost == true and 3000 or t1.MAX_SPEED)
 
 	v27(Parent, v239 * t1.HEADROOM)
 
@@ -3109,7 +3246,7 @@ local function v232(p54, p55, p56, p57, p58, p59, p60)
 
 	while not t10.cancelled and (not p57 or not p57()) and p54.Parent and not (v246 <= os.clock()) do
 		local v249 = math.max(math.min(RunService.Heartbeat:Wait(), 0.15), 0.0041666666666666666)
-		local v250 = math.clamp(v20(), t1.MIN_SPEED, genv.__SenaV4AdminBoost == true and 3000 or t1.MAX_SPEED)
+		local v250 = math.clamp(v20(), t1.MIN_SPEED, genv.__RiuuV4AdminBoost == true and 3000 or t1.MAX_SPEED)
 
 		v27(Parent, v250 * t1.HEADROOM)
 
@@ -3240,7 +3377,7 @@ local function v267(p65, p66)
 			local Humanoid = Parent and Parent:FindFirstChildOfClass("Humanoid")
 
 			if Humanoid then
-				local v270 = math.clamp(v20(), t1.MIN_SPEED, genv.__SenaV4AdminBoost == true and 3000 or t1.MAX_SPEED)
+				local v270 = math.clamp(v20(), t1.MIN_SPEED, genv.__RiuuV4AdminBoost == true and 3000 or t1.MAX_SPEED)
 
 				v27(Parent, v270 * t1.HEADROOM)
 
@@ -3257,7 +3394,7 @@ local function v267(p65, p66)
 	return false
 end
 
-getgenv().SenaV4Config = senaV4Config
+getgenv().RiuuV4Config = senaV4Config
 
 local function v271(p67)
 	if p67 and p67.Name == "PlayerTrap" then
@@ -3405,7 +3542,7 @@ local t11 = {
 	ConfirmTimeout = 2.5,
 	PollSeconds = 0.05,
 	ArrivalSettle = 0.5,
-	DecoyName = "__SenaV4TweenTreadmillDecoy",
+	DecoyName = "__RiuuV4TweenTreadmillDecoy",
 	destroyTrail = function(p69)
 		if typeof(p69) == "Instance" then
 			if p69:IsA("Trail") then
@@ -3732,8 +3869,8 @@ t11.prepare = function(p73, p74)
 
 	return false
 end
-t11.previousCleanup = genv.__SenaV4TweenRuntimeCleanup
-genv.__SenaV4TweenRuntimeCleanup = function()
+t11.previousCleanup = genv.__RiuuV4TweenRuntimeCleanup
+genv.__RiuuV4TweenRuntimeCleanup = function()
 	v290()
 	t11.removeDecoy()
 
@@ -3751,8 +3888,8 @@ LocalPlayer.CharacterRemoving:Connect(function()
 end)
 
 do
-	if type(genv.__SenaV4CosmeticSuppressCleanup) == "function" then
-		pcall(genv.__SenaV4CosmeticSuppressCleanup)
+	if type(genv.__RiuuV4CosmeticSuppressCleanup) == "function" then
+		pcall(genv.__RiuuV4CosmeticSuppressCleanup)
 	end
 
 	local t12 = {}
@@ -3803,7 +3940,7 @@ do
 		local GuardPresentationComponent = require(ReplicatedStorage.Shared.Modules.GuardAreas.GuardPresentationComponent)
 
 		if type(GuardPresentationComponent) == "table" then
-			genv.__SenaV4GuardPresentOrig = genv.__SenaV4GuardPresentOrig or {
+			genv.__RiuuV4GuardPresentOrig = genv.__RiuuV4GuardPresentOrig or {
 				PlayWake = GuardPresentationComponent.PlayWake,
 				PlayHit = GuardPresentationComponent.PlayHit,
 				PlayAfterWake = GuardPresentationComponent.PlayAfterWake,
@@ -3821,7 +3958,7 @@ do
 			GuardPresentationComponent.ScheduleAfterWake = playWake
 		end
 	end)
-	genv.__SenaV4CosmeticSuppressCleanup = function()
+	genv.__RiuuV4CosmeticSuppressCleanup = function()
 		for _, v in ipairs(t12) do
 			pcall(function()
 				v:Disconnect()
@@ -3830,13 +3967,13 @@ do
 
 		table.clear(t12)
 
-		local __SenaV4GuardPresentOrig = genv.__SenaV4GuardPresentOrig
+		local __RiuuV4GuardPresentOrig = genv.__RiuuV4GuardPresentOrig
 
-		if type(__SenaV4GuardPresentOrig) == "table" then
+		if type(__RiuuV4GuardPresentOrig) == "table" then
 			pcall(function()
 				local GuardPresentationComponent = require(ReplicatedStorage.Shared.Modules.GuardAreas.GuardPresentationComponent)
 
-				for k, v in pairs(__SenaV4GuardPresentOrig) do
+				for k, v in pairs(__RiuuV4GuardPresentOrig) do
 					GuardPresentationComponent[k] = v
 				end
 			end)
@@ -3845,8 +3982,8 @@ do
 end
 
 do
-	if type(genv.__SenaV4StealDeclutterCleanup) == "function" then
-		pcall(genv.__SenaV4StealDeclutterCleanup)
+	if type(genv.__RiuuV4StealDeclutterCleanup) == "function" then
+		pcall(genv.__RiuuV4StealDeclutterCleanup)
 	end
 
 	local t13 = {
@@ -3937,7 +4074,7 @@ do
 		end)
 	end
 
-	genv.__SenaV4SetStealDeclutter = function(p81)
+	genv.__RiuuV4SetStealDeclutter = function(p81)
 		local v383 = p81 == true
 
 		if v383 == u367 then
@@ -3952,7 +4089,7 @@ do
 			v380()
 		end
 	end
-	genv.__SenaV4StealDeclutterCleanup = function()
+	genv.__RiuuV4StealDeclutterCleanup = function()
 		u367 = false
 		v380()
 	end
@@ -4010,8 +4147,8 @@ do
 	end
 end
 
-if type(genv.__SenaV4DecomBoostCleanup) == "function" then
-	pcall(genv.__SenaV4DecomBoostCleanup)
+if type(genv.__RiuuV4DecomBoostCleanup) == "function" then
+	pcall(genv.__RiuuV4DecomBoostCleanup)
 end
 
 local t15, v390, v391
@@ -4020,7 +4157,7 @@ do
 	local t16 = {}
 	local u393 = false
 
-	genv.__SenaV4DecomBoostCleanup = function()
+	genv.__RiuuV4DecomBoostCleanup = function()
 		for _, v in ipairs(t16) do
 			pcall(function()
 				v:Disconnect()
@@ -4085,11 +4222,11 @@ do
 		end
 	end
 	local function v412(p83)
-		if not p83:FindFirstAncestor("SenaVisualBack") then
-			if not p83:FindFirstAncestor("SenaVisualRemote") then
+		if not p83:FindFirstAncestor("RiuuVisualBack") then
+			if not p83:FindFirstAncestor("RiuuVisualRemote") then
 				local Tool = p83:FindFirstAncestorWhichIsA("Tool")
 
-				return Tool ~= nil and Tool:GetAttribute("SenaVisual") ~= nil
+				return Tool ~= nil and Tool:GetAttribute("RiuuVisual") ~= nil
 			end
 		end
 
@@ -4276,8 +4413,8 @@ do
 				t19.quality = Enum.QualityLevel.Automatic
 			end
 
-			t15.snapshot = genv.__SenaV4DecomSnapshot or t19
-			genv.__SenaV4DecomSnapshot = t15.snapshot
+			t15.snapshot = genv.__RiuuV4DecomSnapshot or t19
+			genv.__RiuuV4DecomSnapshot = t15.snapshot
 		end
 
 		pcall(function()
@@ -4497,7 +4634,7 @@ do
 		t15.effects = {}
 		t15.snapshot = nil
 	end
-	genv.__SenaV4DecomBoostUndo = t15
+	genv.__RiuuV4DecomBoostUndo = t15
 
 	local u456 = false
 
@@ -4635,8 +4772,8 @@ do
 		return false
 	end
 	local function v489()
-		if type(genv.__SenaV4SetCapFps) == "function" then
-			pcall(genv.__SenaV4SetCapFps, 240)
+		if type(genv.__RiuuV4SetCapFps) == "function" then
+			pcall(genv.__RiuuV4SetCapFps, 240)
 		end
 
 		pcall(function()
@@ -5192,16 +5329,16 @@ local t25 = {
 do
 	local function v599(p98)
 		if p98 == "auto_steal" then
-			local __SenaV4StealWantsCharacter = genv.__SenaV4StealWantsCharacter
+			local __RiuuV4StealWantsCharacter = genv.__RiuuV4StealWantsCharacter
 
-			return __SenaV4StealWantsCharacter ~= nil and __SenaV4StealWantsCharacter() == true
+			return __RiuuV4StealWantsCharacter ~= nil and __RiuuV4StealWantsCharacter() == true
 		end
 
 		if p98 ~= "mech_boss" then
 			if p98 == "butterfly" then
-				local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+				local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-				return __SenaV4ButterflyRuntime ~= nil and __SenaV4ButterflyRuntime.wantsCharacter == true
+				return __RiuuV4ButterflyRuntime ~= nil and __RiuuV4ButterflyRuntime.wantsCharacter == true
 			end
 
 			if p98 == "auto_place" then
@@ -5236,9 +5373,9 @@ do
 	end
 	local function v604(p99)
 		if p99 == "auto_steal" then
-			local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+			local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-			return __SenaV4EggRuntime ~= nil and __SenaV4EggRuntime.enabled == true and (__SenaV4EggRuntime.running == true or __SenaV4EggRuntime.carry ~= nil and __SenaV4EggRuntime.carry.active == true)
+			return __RiuuV4EggRuntime ~= nil and __RiuuV4EggRuntime.enabled == true and (__RiuuV4EggRuntime.running == true or __RiuuV4EggRuntime.carry ~= nil and __RiuuV4EggRuntime.carry.active == true)
 		end
 
 		if p99 == "mech_boss" then
@@ -5253,9 +5390,9 @@ do
 			return false
 		end
 
-		local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+		local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-		return __SenaV4ButterflyRuntime ~= nil and __SenaV4ButterflyRuntime.active == true
+		return __RiuuV4ButterflyRuntime ~= nil and __RiuuV4ButterflyRuntime.active == true
 	end
 
 	t25.blocker = function(p100)
@@ -5759,7 +5896,7 @@ do
 		local PlotState2 = require(ReplicatedStorage2.Client.PlotState)
 
 		local function v721()
-			return genv.__SenaV4AdminBoost == true and 3000 or 1000
+			return genv.__RiuuV4AdminBoost == true and 3000 or 1000
 		end
 
 		local t42 = {
@@ -6082,14 +6219,14 @@ do
 		end
 		local function v792()
 			local v793 = v781()
-			local __SenaV4StealAnEggMovementSpoof = v793.__SenaV4StealAnEggMovementSpoof
+			local __RiuuV4StealAnEggMovementSpoof = v793.__RiuuV4StealAnEggMovementSpoof
 
-			if type(__SenaV4StealAnEggMovementSpoof) ~= "table" or __SenaV4StealAnEggMovementSpoof.Version ~= 436 then
-				if type(__SenaV4StealAnEggMovementSpoof) == "table" then
-					__SenaV4StealAnEggMovementSpoof.Enabled = false
+			if type(__RiuuV4StealAnEggMovementSpoof) ~= "table" or __RiuuV4StealAnEggMovementSpoof.Version ~= 436 then
+				if type(__RiuuV4StealAnEggMovementSpoof) == "table" then
+					__RiuuV4StealAnEggMovementSpoof.Enabled = false
 				end
 
-				__SenaV4StealAnEggMovementSpoof = {
+				__RiuuV4StealAnEggMovementSpoof = {
 					Version = 436,
 					Installed = false,
 					Enabled = false,
@@ -6098,10 +6235,10 @@ do
 					RootPart = nil,
 					WalkSpeed = 600
 				}
-				v793.__SenaV4StealAnEggMovementSpoof = __SenaV4StealAnEggMovementSpoof
+				v793.__RiuuV4StealAnEggMovementSpoof = __RiuuV4StealAnEggMovementSpoof
 			end
 
-			return __SenaV4StealAnEggMovementSpoof
+			return __RiuuV4StealAnEggMovementSpoof
 		end
 		local function v795(p152, p153)
 			local v796 = v792()
@@ -6121,12 +6258,12 @@ do
 			return Humanoid ~= nil and HumanoidRootPart ~= nil
 		end
 		local function v799()
-			local __SenaV4StealAnEggMovementSpoof = v781().__SenaV4StealAnEggMovementSpoof
+			local __RiuuV4StealAnEggMovementSpoof = v781().__RiuuV4StealAnEggMovementSpoof
 
-			if type(__SenaV4StealAnEggMovementSpoof) == "table" then
-				__SenaV4StealAnEggMovementSpoof.Enabled = false
-				__SenaV4StealAnEggMovementSpoof.Humanoid = nil
-				__SenaV4StealAnEggMovementSpoof.RootPart = nil
+			if type(__RiuuV4StealAnEggMovementSpoof) == "table" then
+				__RiuuV4StealAnEggMovementSpoof.Enabled = false
+				__RiuuV4StealAnEggMovementSpoof.Humanoid = nil
+				__RiuuV4StealAnEggMovementSpoof.RootPart = nil
 			end
 		end
 		local function v801(p154, p155, p156)
@@ -6331,14 +6468,14 @@ do
 		end
 		local function v851()
 			local v852 = v781()
-			local __SenaV4StealAnEggIntegritySpoof = v852.__SenaV4StealAnEggIntegritySpoof
+			local __RiuuV4StealAnEggIntegritySpoof = v852.__RiuuV4StealAnEggIntegritySpoof
 
-			if type(__SenaV4StealAnEggIntegritySpoof) ~= "table" then
-				__SenaV4StealAnEggIntegritySpoof = {}
-				v852.__SenaV4StealAnEggIntegritySpoof = __SenaV4StealAnEggIntegritySpoof
+			if type(__RiuuV4StealAnEggIntegritySpoof) ~= "table" then
+				__RiuuV4StealAnEggIntegritySpoof = {}
+				v852.__RiuuV4StealAnEggIntegritySpoof = __RiuuV4StealAnEggIntegritySpoof
 			end
 
-			return __SenaV4StealAnEggIntegritySpoof
+			return __RiuuV4StealAnEggIntegritySpoof
 		end
 		local function v854(p167, p168, p169)
 			return type(p167) == "table" and rawget(p167, "Player") == LocalPlayer2 and rawget(p167, "Character") == LocalPlayer2.Character and rawget(p167, "Humanoid") == p168 and rawget(p167, "RootPart") == p169
@@ -6386,36 +6523,36 @@ do
 			return true
 		end
 		local function v860(p176, p177, p178, p179)
-			local __SenaV4StealAnEggIntegritySpoof = v781().__SenaV4StealAnEggIntegritySpoof
+			local __RiuuV4StealAnEggIntegritySpoof = v781().__RiuuV4StealAnEggIntegritySpoof
 
-			if type(__SenaV4StealAnEggIntegritySpoof) ~= "table" or not __SenaV4StealAnEggIntegritySpoof.Enabled or __SenaV4StealAnEggIntegritySpoof.Humanoid ~= p176 or __SenaV4StealAnEggIntegritySpoof.RootPart ~= p177 or not v855(__SenaV4StealAnEggIntegritySpoof.State, p176, p177) then
+			if type(__RiuuV4StealAnEggIntegritySpoof) ~= "table" or not __RiuuV4StealAnEggIntegritySpoof.Enabled or __RiuuV4StealAnEggIntegritySpoof.Humanoid ~= p176 or __RiuuV4StealAnEggIntegritySpoof.RootPart ~= p177 or not v855(__RiuuV4StealAnEggIntegritySpoof.State, p176, p177) then
 				return false
 			end
 
-			__SenaV4StealAnEggIntegritySpoof.WalkSpeed = math.clamp(p178 * 1.35, 200, 1350)
+			__RiuuV4StealAnEggIntegritySpoof.WalkSpeed = math.clamp(p178 * 1.35, 200, 1350)
 
 			if typeof(p179) == "Vector3" then
-				__SenaV4StealAnEggIntegritySpoof.TravelVelocity = p179
-			elseif typeof(__SenaV4StealAnEggIntegritySpoof.TravelVelocity) ~= "Vector3" then
-				__SenaV4StealAnEggIntegritySpoof.TravelVelocity = Vector3.zero
+				__RiuuV4StealAnEggIntegritySpoof.TravelVelocity = p179
+			elseif typeof(__RiuuV4StealAnEggIntegritySpoof.TravelVelocity) ~= "Vector3" then
+				__RiuuV4StealAnEggIntegritySpoof.TravelVelocity = Vector3.zero
 			end
 
-			return v831(__SenaV4StealAnEggIntegritySpoof.State, __SenaV4StealAnEggIntegritySpoof.WalkSpeed, __SenaV4StealAnEggIntegritySpoof.TravelVelocity)
+			return v831(__RiuuV4StealAnEggIntegritySpoof.State, __RiuuV4StealAnEggIntegritySpoof.WalkSpeed, __RiuuV4StealAnEggIntegritySpoof.TravelVelocity)
 		end
 		local function v862(p180)
-			local __SenaV4StealAnEggIntegritySpoof = v781().__SenaV4StealAnEggIntegritySpoof
+			local __RiuuV4StealAnEggIntegritySpoof = v781().__RiuuV4StealAnEggIntegritySpoof
 
-			if type(__SenaV4StealAnEggIntegritySpoof) ~= "table" then
+			if type(__RiuuV4StealAnEggIntegritySpoof) ~= "table" then
 				return
 			end
 
-			if p180 == nil or __SenaV4StealAnEggIntegritySpoof.Humanoid == p180 then
-				__SenaV4StealAnEggIntegritySpoof.Enabled = false
-				__SenaV4StealAnEggIntegritySpoof.Humanoid = nil
-				__SenaV4StealAnEggIntegritySpoof.RootPart = nil
-				__SenaV4StealAnEggIntegritySpoof.State = nil
-				__SenaV4StealAnEggIntegritySpoof.TravelVelocity = nil
-				__SenaV4StealAnEggIntegritySpoof.NextSearchAt = 0
+			if p180 == nil or __RiuuV4StealAnEggIntegritySpoof.Humanoid == p180 then
+				__RiuuV4StealAnEggIntegritySpoof.Enabled = false
+				__RiuuV4StealAnEggIntegritySpoof.Humanoid = nil
+				__RiuuV4StealAnEggIntegritySpoof.RootPart = nil
+				__RiuuV4StealAnEggIntegritySpoof.State = nil
+				__RiuuV4StealAnEggIntegritySpoof.TravelVelocity = nil
+				__RiuuV4StealAnEggIntegritySpoof.NextSearchAt = 0
 			end
 		end
 		local function v864(p181, p182)
@@ -6787,8 +6924,8 @@ do
 
 							task.defer(function()
 								if not obj.destroyed and obj.enabled and obj.carry.uid == p194.Uid and obj:_hasConfirmedCarry(p194.Uid) then
-									if genv.__SenaV4GodMode then
-										genv.__SenaV4GodMode:stopDefend()
+									if genv.__RiuuV4GodMode then
+										genv.__RiuuV4GodMode:stopDefend()
 									end
 
 									obj:_returnToSafe()
@@ -6824,8 +6961,8 @@ do
 				obj.carry.active = false
 				obj.carry.uid = nil
 
-				if genv.__SenaV4GodMode then
-					genv.__SenaV4GodMode:startDefend(Uid)
+				if genv.__RiuuV4GodMode then
+					genv.__RiuuV4GodMode:startDefend(Uid)
 				end
 
 				if obj._captureHoldUid ~= nil and Uid == obj._captureHoldUid or obj._adminBusyUid ~= nil and Uid == obj._adminBusyUid then
@@ -8884,7 +9021,7 @@ do
 			end
 
 			for _, child in ipairs(workspace:GetChildren()) do
-				if child.Name == "__SenaV4HoverPad" or child.Name == "__SenaV4TreadmillDecoy" then
+				if child.Name == "__RiuuV4HoverPad" or child.Name == "__RiuuV4TreadmillDecoy" then
 					table.insert(filterDescendantsInstances, child)
 				end
 			end
@@ -9002,7 +9139,7 @@ do
 					return false
 				end
 
-				treadmillDecoy.Name = "__SenaV4TreadmillDecoy"
+				treadmillDecoy.Name = "__RiuuV4TreadmillDecoy"
 
 				for _, descendant in ipairs(treadmillDecoy:GetDescendants()) do
 					if t45[descendant.ClassName] or descendant:IsA("Trail") then
@@ -9400,6 +9537,22 @@ do
 				return false
 			end
 
+			if p309.config.stealMode == "Instant" then
+				pcall(v760, Character)
+				pcall(function()
+					Humanoid.AutoRotate = false
+				end)
+				p309:_startHoverPad()
+				pcall(function()
+					HumanoidRootPart.CFrame = p310
+					HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+					HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+				end)
+				p309:_syncHoverPad(p310.Position)
+
+				return true
+			end
+
 			pcall(v760, Character)
 			pcall(function()
 				Humanoid.AutoRotate = false
@@ -9492,20 +9645,20 @@ do
 				return p316._brakeDecel
 			end
 
-			local __SenaV4BrakeDecel = genv.__SenaV4BrakeDecel
+			local __RiuuV4BrakeDecel = genv.__RiuuV4BrakeDecel
 
 			if LocalPlayer2.Character then
 				local Humanoid = LocalPlayer2.Character:FindFirstChildOfClass("Humanoid")
 
-				if type(__SenaV4BrakeDecel) == "table" and Humanoid then
-					if math.abs((__SenaV4BrakeDecel.ws or 0) - Humanoid.WalkSpeed) < 15 then
-						p316._brakeDecel = __SenaV4BrakeDecel.decel
+				if type(__RiuuV4BrakeDecel) == "table" and Humanoid then
+					if math.abs((__RiuuV4BrakeDecel.ws or 0) - Humanoid.WalkSpeed) < 15 then
+						p316._brakeDecel = __RiuuV4BrakeDecel.decel
 
-						return __SenaV4BrakeDecel.decel
+						return __RiuuV4BrakeDecel.decel
 					end
 				end
 			else
-				type(__SenaV4BrakeDecel)
+				type(__RiuuV4BrakeDecel)
 			end
 
 			return 420
@@ -9707,7 +9860,7 @@ do
 									end
 								elseif state == 26 then
 									v1211._brakeDecel = v1211:_walkBrakeDecel() * 0.8 + v1240 * 0.93 * 0.2
-									genv.__SenaV4BrakeDecel = {
+									genv.__RiuuV4BrakeDecel = {
 										ws = Humanoid.WalkSpeed,
 										decel = v1211._brakeDecel
 									}
@@ -10285,7 +10438,7 @@ do
 			t46._syncHoverPad = function(p378, p379)
 				local hoverPad = p378.hoverPad
 
-				if not hoverPad or not hoverPad.Parent or hoverPad:GetAttribute("SenaV4RuntimeOwner") ~= p378.hoverPadOwnerId then
+				if not hoverPad or not hoverPad.Parent or hoverPad:GetAttribute("RiuuV4RuntimeOwner") ~= p378.hoverPadOwnerId then
 					return false
 				end
 
@@ -10375,7 +10528,7 @@ do
 		end
 		t46._purgeOrphanHoverPads = function(p386)
 			for _, child in ipairs(workspace:GetChildren()) do
-				if child.Name == "__SenaV4HoverPad" and child ~= p386.hoverPad then
+				if child.Name == "__RiuuV4HoverPad" and child ~= p386.hoverPad then
 					pcall(child.Destroy, child)
 				end
 			end
@@ -10383,7 +10536,7 @@ do
 		t46._startHoverPad = function(p387)
 			local hoverPad = p387.hoverPad
 
-			if not hoverPad or not hoverPad.Parent or hoverPad:GetAttribute("SenaV4RuntimeOwner") ~= p387.hoverPadOwnerId then
+			if not hoverPad or not hoverPad.Parent or hoverPad:GetAttribute("RiuuV4RuntimeOwner") ~= p387.hoverPadOwnerId then
 				p387:_purgeOrphanHoverPads()
 
 				if hoverPad and hoverPad.Parent then
@@ -10392,8 +10545,8 @@ do
 
 				local Part = Instance.new("Part")
 
-				Part.Name = "__SenaV4HoverPad"
-				Part:SetAttribute("SenaV4RuntimeOwner", p387.hoverPadOwnerId)
+				Part.Name = "__RiuuV4HoverPad"
+				Part:SetAttribute("RiuuV4RuntimeOwner", p387.hoverPadOwnerId)
 				Part.Anchored = true
 				Part.CanCollide = true
 				Part.CanQuery = true
@@ -10809,9 +10962,9 @@ do
 							if State ~= AreaEggs.States.Slot and State ~= AreaEggs.States.Dropped and State ~= "GuardCarried" and (not v1375 or v1375.CarrierUserId ~= LocalPlayer2.UserId) and not p397:_hasConfirmedCarry(Uid) then
 								v1373(false)
 
-								local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+								local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-								p397:_finish(State == "Carried" and __SenaV4PlayerSteal ~= nil and __SenaV4PlayerSteal:intercept(Uid) and "Target taken - chasing the carrier" or "Target taken by someone else")
+								p397:_finish(State == "Carried" and __RiuuV4PlayerSteal ~= nil and __RiuuV4PlayerSteal:intercept(Uid) and "Target taken - chasing the carrier" or "Target taken by someone else")
 
 								return
 							end
@@ -10823,8 +10976,8 @@ do
 
 						v795(Character, v1378 * 1.35)
 
-						local __SenaV4StealAnEggIntegritySpoof = v781().__SenaV4StealAnEggIntegritySpoof
-						local State = type(__SenaV4StealAnEggIntegritySpoof) == "table" and __SenaV4StealAnEggIntegritySpoof.State or nil
+						local __RiuuV4StealAnEggIntegritySpoof = v781().__RiuuV4StealAnEggIntegritySpoof
+						local State = type(__RiuuV4StealAnEggIntegritySpoof) == "table" and __RiuuV4StealAnEggIntegritySpoof.State or nil
 
 						if not v855(State, Humanoid, HumanoidRootPart) then
 							u1371 = nil
@@ -11031,8 +11184,8 @@ do
 				return
 			end
 
-			if genv.__SenaV4GodMode then
-				genv.__SenaV4GodMode:startDefend(p404)
+			if genv.__RiuuV4GodMode then
+				genv.__RiuuV4GodMode:startDefend(p404)
 			end
 
 			local v1414
@@ -11493,7 +11646,7 @@ do
 
 						if lastCarryReject ~= p412._lastCarryRejectLogged then
 							p412._lastCarryRejectLogged = lastCarryReject
-							warn("[Sena Steal] carry refused: " .. lastCarryReject)
+							warn("[Riuu Steal] carry refused: " .. lastCarryReject)
 						end
 					end
 
@@ -12336,7 +12489,7 @@ do
 				return v1583 ~= nil and v1583.State == AreaEggs.States.Carried and v1583.CarrierUserId == LocalPlayer2.UserId
 			end
 			local function v1584()
-				return not p444.destroyed and p444.enabled and genv.__SenaV4AdminBoost == true and p444._adminBusyUid == Uid
+				return not p444.destroyed and p444.enabled and genv.__RiuuV4AdminBoost == true and p444._adminBusyUid == Uid
 			end
 
 			local ok, result = pcall(function()
@@ -12412,7 +12565,7 @@ do
 			end
 
 			if not ok then
-				warn("[Sena Steal] admin steal error: " .. tostring(result))
+				warn("[Riuu Steal] admin steal error: " .. tostring(result))
 
 				if not p444.destroyed and p444.enabled then
 					p444:_finish("Steal error — retrying")
@@ -12518,7 +12671,7 @@ do
 					return
 				end
 
-				if genv.__SenaV4AdminBoost == true then
+				if genv.__RiuuV4AdminBoost == true then
 					local uid = p448.carry.uid or p448.activeTarget and p448.activeTarget.Uid
 
 					if uid and p448._adminBusyUid ~= uid then
@@ -12766,15 +12919,15 @@ do
 
 					p453.stats.delivered = (p453.stats.delivered or 0) + 1
 
-					local __SenaV4Webhook = genv.__SenaV4Webhook
+					local __RiuuV4Webhook = genv.__RiuuV4Webhook
 
-					if not __SenaV4Webhook then
+					if not __RiuuV4Webhook then
 						return
 					end
 
 					local ok, result = pcall(p453.catalog.resolve, activeTarget)
 
-					pcall(__SenaV4Webhook.stolen, activeTarget, ok and result or nil, nil)
+					pcall(__RiuuV4Webhook.stolen, activeTarget, ok and result or nil, nil)
 				end)
 			end
 		end
@@ -13051,11 +13204,11 @@ do
 				return
 			end
 
-			local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+			local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 			local autoSteal = t25.blocker("auto_steal")
 			local autoSteal2 = not autoSteal and t25.holder("auto_steal") or nil
 
-			if autoSteal or autoSteal2 or __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+			if autoSteal or autoSteal2 or __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 				p460:_releaseOperation()
 				p460:_setStatus(autoSteal and "Yielding to " .. t25.TITLES[autoSteal] or autoSteal2 and "Waiting for " .. t25.TITLES[autoSteal2] .. " to hand over" or "Yielding to Steal Players")
 
@@ -13189,7 +13342,7 @@ do
 				return
 			end
 
-			if genv.__SenaV4AdminBoost == true and (not p460.captureObjectiveEnabled or not p460:_isCaptureEgg(v1655.Uid)) then
+			if genv.__RiuuV4AdminBoost == true and (not p460.captureObjectiveEnabled or not p460:_isCaptureEgg(v1655.Uid)) then
 				p460.safeStarting = false
 				task.spawn(p460._adminSteal, p460, v1655)
 
@@ -13499,7 +13652,7 @@ do
 				for _, descendant in ipairs(p467:GetDescendants()) do
 					if descendant:IsA("BasePart") then
 						if p466.scramblePortalOriginals[descendant] == nil then
-							local attribute = descendant:GetAttribute("SenaV4PortalOrig")
+							local attribute = descendant:GetAttribute("RiuuV4PortalOrig")
 
 							if type(attribute) == "string" then
 								p466.scramblePortalOriginals[descendant] = {
@@ -13511,7 +13664,7 @@ do
 									CanCollide = descendant.CanCollide,
 									CanTouch = descendant.CanTouch
 								}
-								pcall(descendant.SetAttribute, descendant, "SenaV4PortalOrig", (descendant.CanCollide and "1" or "0") .. (descendant.CanTouch and "1" or "0"))
+								pcall(descendant.SetAttribute, descendant, "RiuuV4PortalOrig", (descendant.CanCollide and "1" or "0") .. (descendant.CanTouch and "1" or "0"))
 							end
 						end
 
@@ -13570,7 +13723,7 @@ do
 						pcall(function()
 							k.CanCollide = scramblePortalOriginal.CanCollide
 							k.CanTouch = scramblePortalOriginal.CanTouch
-							k:SetAttribute("SenaV4PortalOrig", nil)
+							k:SetAttribute("RiuuV4PortalOrig", nil)
 						end)
 					end
 				end
@@ -13933,16 +14086,16 @@ do
 				end
 
 				for _, child in ipairs(AreaEggSlotsClient:GetChildren()) do
-					local __SenaV4EggEsp = child:FindFirstChild("__SenaV4EggEsp")
+					local __RiuuV4EggEsp = child:FindFirstChild("__RiuuV4EggEsp")
 
-					if __SenaV4EggEsp then
-						__SenaV4EggEsp:Destroy()
+					if __RiuuV4EggEsp then
+						__RiuuV4EggEsp:Destroy()
 					end
 
-					local __SenaV4EggHighlight = child:FindFirstChild("__SenaV4EggHighlight")
+					local __RiuuV4EggHighlight = child:FindFirstChild("__RiuuV4EggHighlight")
 
-					if __SenaV4EggHighlight then
-						__SenaV4EggHighlight:Destroy()
+					if __RiuuV4EggHighlight then
+						__RiuuV4EggHighlight:Destroy()
 					end
 				end
 			end
@@ -13964,23 +14117,23 @@ do
 					end
 
 					local Hitbox = v1752 and (child:FindFirstChild("Hitbox") or child:FindFirstChildWhichIsA("BasePart", true))
-					local __SenaV4EggEsp = child:FindFirstChild("__SenaV4EggEsp")
-					local __SenaV4EggHighlight = child:FindFirstChild("__SenaV4EggHighlight")
+					local __RiuuV4EggEsp = child:FindFirstChild("__RiuuV4EggEsp")
+					local __RiuuV4EggHighlight = child:FindFirstChild("__RiuuV4EggHighlight")
 
 					if v1752 and Hitbox then
-						if __SenaV4EggEsp and not __SenaV4EggEsp:FindFirstChild("Icon") then
-							__SenaV4EggEsp:Destroy()
-							__SenaV4EggEsp = nil
+						if __RiuuV4EggEsp and not __RiuuV4EggEsp:FindFirstChild("Icon") then
+							__RiuuV4EggEsp:Destroy()
+							__RiuuV4EggEsp = nil
 						end
 
-						if not __SenaV4EggEsp then
-							__SenaV4EggEsp = Instance.new("BillboardGui")
-							__SenaV4EggEsp.Name = "__SenaV4EggEsp"
-							__SenaV4EggEsp.AlwaysOnTop = true
-							__SenaV4EggEsp.Size = UDim2.fromOffset(220, 72)
-							__SenaV4EggEsp.StudsOffset = Vector3.new(0, 4.4, 0)
-							__SenaV4EggEsp.MaxDistance = 1000
-							__SenaV4EggEsp.Adornee = Hitbox
+						if not __RiuuV4EggEsp then
+							__RiuuV4EggEsp = Instance.new("BillboardGui")
+							__RiuuV4EggEsp.Name = "__RiuuV4EggEsp"
+							__RiuuV4EggEsp.AlwaysOnTop = true
+							__RiuuV4EggEsp.Size = UDim2.fromOffset(220, 72)
+							__RiuuV4EggEsp.StudsOffset = Vector3.new(0, 4.4, 0)
+							__RiuuV4EggEsp.MaxDistance = 1000
+							__RiuuV4EggEsp.Adornee = Hitbox
 
 							local ImageLabel = Instance.new("ImageLabel")
 
@@ -13991,7 +14144,7 @@ do
 							ImageLabel.BackgroundTransparency = 1
 							ImageLabel.ScaleType = Enum.ScaleType.Fit
 							ImageLabel.Visible = false
-							ImageLabel.Parent = __SenaV4EggEsp
+							ImageLabel.Parent = __RiuuV4EggEsp
 
 							local TextLabel = Instance.new("TextLabel")
 
@@ -14005,14 +14158,14 @@ do
 							TextLabel.TextStrokeTransparency = 0.35
 							TextLabel.TextXAlignment = Enum.TextXAlignment.Center
 							TextLabel.TextYAlignment = Enum.TextYAlignment.Top
-							TextLabel.Parent = __SenaV4EggEsp
-							__SenaV4EggEsp.Parent = child
+							TextLabel.Parent = __RiuuV4EggEsp
+							__RiuuV4EggEsp.Parent = child
 						end
 
-						__SenaV4EggEsp.Adornee = Hitbox
+						__RiuuV4EggEsp.Adornee = Hitbox
 
 						local v1758 = p501.catalog.resolve(v1751)
-						local Icon = __SenaV4EggEsp:FindFirstChild("Icon")
+						local Icon = __RiuuV4EggEsp:FindFirstChild("Icon")
 						local icon = config.espIcon and type(v1758.icon) == "string" and v1758.icon ~= "" and v1758.icon or nil
 
 						Icon.Image = icon or ""
@@ -14058,35 +14211,35 @@ do
 							end
 						end
 
-						local Text = __SenaV4EggEsp:FindFirstChild("Text")
+						local Text = __RiuuV4EggEsp:FindFirstChild("Text")
 
 						Text.Text = table.concat(t58, " | ")
 						Text.TextColor3 = rarityColor
 
-						if __SenaV4EggHighlight and not __SenaV4EggHighlight:IsA("Highlight") then
-							__SenaV4EggHighlight:Destroy()
-							__SenaV4EggHighlight = nil
+						if __RiuuV4EggHighlight and not __RiuuV4EggHighlight:IsA("Highlight") then
+							__RiuuV4EggHighlight:Destroy()
+							__RiuuV4EggHighlight = nil
 						end
 
-						if not __SenaV4EggHighlight then
-							__SenaV4EggHighlight = Instance.new("Highlight")
-							__SenaV4EggHighlight.Name = "__SenaV4EggHighlight"
-							__SenaV4EggHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-							__SenaV4EggHighlight.Parent = child
+						if not __RiuuV4EggHighlight then
+							__RiuuV4EggHighlight = Instance.new("Highlight")
+							__RiuuV4EggHighlight.Name = "__RiuuV4EggHighlight"
+							__RiuuV4EggHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+							__RiuuV4EggHighlight.Parent = child
 						end
 
-						__SenaV4EggHighlight.Adornee = child
-						__SenaV4EggHighlight.FillColor = rarityColor
-						__SenaV4EggHighlight.FillTransparency = 0.72
-						__SenaV4EggHighlight.OutlineColor = rarityColor
-						__SenaV4EggHighlight.OutlineTransparency = 0
+						__RiuuV4EggHighlight.Adornee = child
+						__RiuuV4EggHighlight.FillColor = rarityColor
+						__RiuuV4EggHighlight.FillTransparency = 0.72
+						__RiuuV4EggHighlight.OutlineColor = rarityColor
+						__RiuuV4EggHighlight.OutlineTransparency = 0
 					else
-						if __SenaV4EggEsp then
-							__SenaV4EggEsp:Destroy()
+						if __RiuuV4EggEsp then
+							__RiuuV4EggEsp:Destroy()
 						end
 
-						if __SenaV4EggHighlight then
-							__SenaV4EggHighlight:Destroy()
+						if __RiuuV4EggHighlight then
+							__RiuuV4EggHighlight:Destroy()
 						end
 					end
 				end
@@ -14112,15 +14265,15 @@ do
 					local t60 = {}
 
 					if type(EggInventory) == "table" and CenterPoint then
-						local SenaV4PlacedEggAnchors = workspace:FindFirstChild("SenaV4PlacedEggAnchors")
+						local RiuuV4PlacedEggAnchors = workspace:FindFirstChild("RiuuV4PlacedEggAnchors")
 
-						if not SenaV4PlacedEggAnchors then
-							SenaV4PlacedEggAnchors = Instance.new("Folder")
-							SenaV4PlacedEggAnchors.Name = "SenaV4PlacedEggAnchors"
-							SenaV4PlacedEggAnchors.Parent = workspace
+						if not RiuuV4PlacedEggAnchors then
+							RiuuV4PlacedEggAnchors = Instance.new("Folder")
+							RiuuV4PlacedEggAnchors.Name = "RiuuV4PlacedEggAnchors"
+							RiuuV4PlacedEggAnchors.Parent = workspace
 						end
 
-						for _, child in ipairs(SenaV4PlacedEggAnchors:GetChildren()) do
+						for _, child in ipairs(RiuuV4PlacedEggAnchors:GetChildren()) do
 							if child:IsA("Highlight") or child:IsA("BillboardGui") then
 								child:Destroy()
 							end
@@ -14152,14 +14305,14 @@ do
 									if typeof(v1790.anchor) ~= "Instance" then
 										local Part = Instance.new("Part")
 
-										Part.Name = "SenaV4PE_" .. k
+										Part.Name = "RiuuV4PE_" .. k
 										Part.Size = Vector3.new(1.5, 1.5, 1.5)
 										Part.Transparency = 1
 										Part.Anchored = true
 										Part.CanCollide = false
 										Part.CanQuery = false
 										Part.CanTouch = false
-										Part.Parent = SenaV4PlacedEggAnchors
+										Part.Parent = RiuuV4PlacedEggAnchors
 										v1790.anchor = Part
 									end
 
@@ -14203,15 +14356,15 @@ do
 											t61[#t61 + 1] = "READY"
 										end
 
-										local __SenaV4EggEsp = v1790.anchor:FindFirstChild("__SenaV4EggEsp")
+										local __RiuuV4EggEsp = v1790.anchor:FindFirstChild("__RiuuV4EggEsp")
 
-										if not __SenaV4EggEsp then
-											__SenaV4EggEsp = Instance.new("BillboardGui")
-											__SenaV4EggEsp.Name = "__SenaV4EggEsp"
-											__SenaV4EggEsp.AlwaysOnTop = true
-											__SenaV4EggEsp.Size = UDim2.fromOffset(220, 72)
-											__SenaV4EggEsp.StudsOffset = Vector3.new(0, 1.4, 0)
-											__SenaV4EggEsp.MaxDistance = 1000
+										if not __RiuuV4EggEsp then
+											__RiuuV4EggEsp = Instance.new("BillboardGui")
+											__RiuuV4EggEsp.Name = "__RiuuV4EggEsp"
+											__RiuuV4EggEsp.AlwaysOnTop = true
+											__RiuuV4EggEsp.Size = UDim2.fromOffset(220, 72)
+											__RiuuV4EggEsp.StudsOffset = Vector3.new(0, 1.4, 0)
+											__RiuuV4EggEsp.MaxDistance = 1000
 
 											local ImageLabel = Instance.new("ImageLabel")
 
@@ -14222,7 +14375,7 @@ do
 											ImageLabel.BackgroundTransparency = 1
 											ImageLabel.ScaleType = Enum.ScaleType.Fit
 											ImageLabel.Visible = false
-											ImageLabel.Parent = __SenaV4EggEsp
+											ImageLabel.Parent = __RiuuV4EggEsp
 
 											local TextLabel = Instance.new("TextLabel")
 
@@ -14236,11 +14389,11 @@ do
 											TextLabel.TextStrokeTransparency = 0.35
 											TextLabel.TextXAlignment = Enum.TextXAlignment.Center
 											TextLabel.TextYAlignment = Enum.TextYAlignment.Top
-											TextLabel.Parent = __SenaV4EggEsp
-											__SenaV4EggEsp.Parent = v1790.anchor
+											TextLabel.Parent = __RiuuV4EggEsp
+											__RiuuV4EggEsp.Parent = v1790.anchor
 										end
 
-										local Icon = __SenaV4EggEsp:FindFirstChild("Icon")
+										local Icon = __RiuuV4EggEsp:FindFirstChild("Icon")
 
 										if Icon then
 											local icon = config.espIcon and type(v1792.icon) == "string" and v1792.icon ~= "" and v1792.icon or nil
@@ -14249,15 +14402,15 @@ do
 											Icon.Visible = icon ~= nil
 										end
 
-										local Text = __SenaV4EggEsp:FindFirstChild("Text")
+										local Text = __RiuuV4EggEsp:FindFirstChild("Text")
 
 										Text.Text = table.concat(t61, " | ")
 										Text.TextColor3 = rarityColor
 
-										local __SenaV4EggHighlight = v1790.anchor:FindFirstChild("__SenaV4EggHighlight")
+										local __RiuuV4EggHighlight = v1790.anchor:FindFirstChild("__RiuuV4EggHighlight")
 
-										if __SenaV4EggHighlight then
-											__SenaV4EggHighlight:Destroy()
+										if __RiuuV4EggHighlight then
+											__RiuuV4EggHighlight:Destroy()
 										end
 									else
 										t60[k] = nil
@@ -14312,7 +14465,7 @@ do
 
 			p506.config.speed = v1811 * 10
 
-			if genv.__SenaV4AdminBoost == true then
+			if genv.__RiuuV4AdminBoost == true then
 				p506.config.speed = 3000
 			end
 
@@ -14416,10 +14569,10 @@ do
 					end
 				end
 
-				local SenaV4PlacedEggAnchors = workspace:FindFirstChild("SenaV4PlacedEggAnchors")
+				local RiuuV4PlacedEggAnchors = workspace:FindFirstChild("RiuuV4PlacedEggAnchors")
 
-				if SenaV4PlacedEggAnchors then
-					SenaV4PlacedEggAnchors:Destroy()
+				if RiuuV4PlacedEggAnchors then
+					RiuuV4PlacedEggAnchors:Destroy()
 				end
 			end)
 			v740(p514.connections)
@@ -14603,11 +14756,11 @@ do
 			task.spawn(function()
 				task.wait()
 
-				local __SenaV4ForestGate = genv.__SenaV4ForestGate
+				local __RiuuV4ForestGate = genv.__RiuuV4ForestGate
 
-				if type(__SenaV4ForestGate) == "table" and __SenaV4ForestGate.comp and __SenaV4ForestGate.orig then
-					pcall(rawset, __SenaV4ForestGate.comp, "_attackHandler", __SenaV4ForestGate.orig)
-					genv.__SenaV4ForestGate = nil
+				if type(__RiuuV4ForestGate) == "table" and __RiuuV4ForestGate.comp and __RiuuV4ForestGate.orig then
+					pcall(rawset, __RiuuV4ForestGate.comp, "_attackHandler", __RiuuV4ForestGate.orig)
+					genv.__RiuuV4ForestGate = nil
 				end
 
 				if type(getgc) ~= "function" then
@@ -14639,17 +14792,17 @@ do
 						comp = v,
 						orig = value
 					}
-					genv.__SenaV4ForestGate = p522._forestGate
+					genv.__RiuuV4ForestGate = p522._forestGate
 					rawset(v, "_attackHandler", function(...)
-						if not p522.enabled or p522.destroyed or p522.eggRuntime and p522.eggRuntime.instantPhase == "priming" or genv.__SenaV4PlayerSteal and genv.__SenaV4PlayerSteal.running then
+						if not p522.enabled or p522.destroyed or p522.eggRuntime and p522.eggRuntime.instantPhase == "priming" or genv.__RiuuV4PlayerSteal and genv.__RiuuV4PlayerSteal.running then
 							return value(...)
 						end
 
 						p522.stats.blockedHits += 1
 						p522:_recoverBody(true)
 
-						if genv.__SenaV4GodMode then
-							genv.__SenaV4GodMode:startDefend()
+						if genv.__RiuuV4GodMode then
+							genv.__RiuuV4GodMode:startDefend()
 						end
 					end)
 
@@ -14785,9 +14938,9 @@ do
 					return
 				end
 
-				local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+				local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-				if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+				if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 					return
 				end
 
@@ -14804,8 +14957,8 @@ do
 					p533.stats.blockedDrops += 1
 					p533:_startSticky(Uid, lastHeldSlotKey)
 
-					if genv.__SenaV4GodMode then
-						genv.__SenaV4GodMode:startDefend(Uid)
+					if genv.__RiuuV4GodMode then
+						genv.__RiuuV4GodMode:startDefend(Uid)
 					end
 				end
 			end))
@@ -14845,7 +14998,7 @@ do
 				return false
 			end
 
-			getgenv().__SenaV4AntiGuard = p537
+			getgenv().__RiuuV4AntiGuard = p537
 			p537:_installRagdollHooks()
 			p537:_bindSignals()
 			p537:_recoverBody()
@@ -14880,8 +15033,8 @@ do
 			if p538._forestGate then
 				pcall(rawset, p538._forestGate.comp, "_attackHandler", p538._forestGate.orig)
 
-				if genv.__SenaV4ForestGate == p538._forestGate then
-					genv.__SenaV4ForestGate = nil
+				if genv.__RiuuV4ForestGate == p538._forestGate then
+					genv.__RiuuV4ForestGate = nil
 				end
 
 				p538._forestGate = nil
@@ -14889,8 +15042,8 @@ do
 
 			p538.eggRuntime = nil
 
-			if getgenv().__SenaV4AntiGuard == p538 then
-				getgenv().__SenaV4AntiGuard = nil
+			if getgenv().__RiuuV4AntiGuard == p538 then
+				getgenv().__RiuuV4AntiGuard = nil
 			end
 		end
 
@@ -14935,13 +15088,13 @@ do
 				return false
 			end
 
-			local __SenaV4IsBatTool = genv.__SenaV4IsBatTool
+			local __RiuuV4IsBatTool = genv.__RiuuV4IsBatTool
 
-			if __SenaV4IsBatTool and __SenaV4IsBatTool(p542) then
+			if __RiuuV4IsBatTool and __RiuuV4IsBatTool(p542) then
 				return true
 			end
 
-			if not __SenaV4IsBatTool and (p542:GetAttribute("IsBat") == true or p542:GetAttribute("GearName") == "Bat") then
+			if not __RiuuV4IsBatTool and (p542:GetAttribute("IsBat") == true or p542:GetAttribute("GearName") == "Bat") then
 				return true
 			end
 
@@ -15113,9 +15266,9 @@ do
 				end
 			end
 
-			local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+			local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-			if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+			if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 				return
 			end
 
@@ -15127,9 +15280,9 @@ do
 					local v1920 = false
 
 					while p551.active and p551.enabled and (not p551.eggRuntime or not p551.eggRuntime.carry or not p551.eggRuntime.carry.active) do
-						local __SenaV4PlayerSteal2 = genv.__SenaV4PlayerSteal
+						local __RiuuV4PlayerSteal2 = genv.__RiuuV4PlayerSteal
 
-						if __SenaV4PlayerSteal2 and __SenaV4PlayerSteal2.running then
+						if __RiuuV4PlayerSteal2 and __RiuuV4PlayerSteal2.running then
 							v1920 = true
 
 							break
@@ -15366,9 +15519,9 @@ do
 				return true
 			end
 
-			local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+			local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-			if __SenaV4EggRuntime and __SenaV4EggRuntime._treadmillResetting then
+			if __RiuuV4EggRuntime and __RiuuV4EggRuntime._treadmillResetting then
 				return false
 			end
 
@@ -15838,7 +15991,7 @@ do
 							now = os.clock()
 							p586:_setStatus("Idle", "Yielding to Auto Steal")
 							task.wait(0.25)
-						elseif genv.__SenaV4IsAutoSellEggBusy and genv.__SenaV4IsAutoSellEggBusy() then
+						elseif genv.__RiuuV4IsAutoSellEggBusy and genv.__RiuuV4IsAutoSellEggBusy() then
 							now = os.clock()
 							p586:_setStatus("Idle", "Waiting for Auto Sell Egg")
 							task.wait(0.25)
@@ -15861,7 +16014,7 @@ do
 
 									local travel = p586.travel and p586.travel:travelAndWait(v2041, {
 										abort = function()
-											return p586.destroyed or p586.busy or not p586.config.idleFarm or idleGeneration ~= p586.idleGeneration or p586.coordinator and p586.coordinator:isBackgroundBusy() or genv.__SenaV4IsAutoSellEggBusy and genv.__SenaV4IsAutoSellEggBusy() or v1945()
+											return p586.destroyed or p586.busy or not p586.config.idleFarm or idleGeneration ~= p586.idleGeneration or p586.coordinator and p586.coordinator:isBackgroundBusy() or genv.__RiuuV4IsAutoSellEggBusy and genv.__RiuuV4IsAutoSellEggBusy() or v1945()
 										end
 									})
 
@@ -15879,7 +16032,7 @@ do
 											end
 										end
 
-										if (not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy()) and not v1945() then
+										if (not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy()) and not v1945() then
 											task.wait(0.35)
 
 											if not p586.busy and p586.config.idleFarm and idleGeneration == p586.idleGeneration then
@@ -15889,7 +16042,7 @@ do
 													end
 												end
 
-												if (not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy()) and not v1945() then
+												if (not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy()) and not v1945() then
 													p586.treadmillEquipPending = true
 
 													local ok, result, result2 = pcall(function()
@@ -15925,7 +16078,7 @@ do
 																break
 															end
 
-															if not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy() then
+															if not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy() then
 																if not v1945() then
 																	task.wait(0.25)
 
@@ -15965,7 +16118,7 @@ do
 																		break
 																	end
 
-																	if not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy() then
+																	if not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy() then
 																		if not v1945() then
 																			task.wait(0.25)
 
@@ -15994,7 +16147,7 @@ do
 																		break
 																	end
 
-																	if not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy() then
+																	if not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy() then
 																		if not v1945() then
 																			task.wait(0.25)
 
@@ -16026,7 +16179,7 @@ do
 																	break
 																end
 
-																if not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy() then
+																if not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy() then
 																	if not v1945() then
 																		task.wait(0.25)
 
@@ -16055,7 +16208,7 @@ do
 																	break
 																end
 
-																if not genv.__SenaV4IsAutoSellEggBusy or not genv.__SenaV4IsAutoSellEggBusy() then
+																if not genv.__RiuuV4IsAutoSellEggBusy or not genv.__RiuuV4IsAutoSellEggBusy() then
 																	if not v1945() then
 																		task.wait(0.25)
 
@@ -16250,9 +16403,9 @@ do
 	local v2063 = v662.new()
 
 	v612 = v1823.new(v611, v703, v2063)
-	genv.__SenaV4EggRuntime = v612
+	genv.__RiuuV4EggRuntime = v612
 	v613 = v2062.new(v2063, v612)
-	genv.__SenaV4TreadmillManager = v613
+	genv.__RiuuV4TreadmillManager = v613
 	v612:setTreadmillManager(v613)
 	v613:setDisableDuringAutomation(true)
 
@@ -16356,7 +16509,7 @@ do
 		end
 		local function v2088()
 			if u2073 == nil then
-				u2073 = v2076("96240498384290") or false
+				u2073 = "https://raw.githubusercontent.com/xaveriusryuuuuuuuuuuuu/riuucommunity/refs/heads/main/riuu-mark.png"
 			end
 
 			return u2073 or nil
@@ -16731,7 +16884,7 @@ do
 					}
 				}
 			}
-			local v2148 = v2076("96240498384290")
+			local v2148 = v2088()
 
 			if v2148 then
 				t84.thumbnail = {
@@ -16753,7 +16906,7 @@ do
 		return t69
 	end
 
-	genv.__SenaV4Webhook = v2064()
+	genv.__RiuuV4Webhook = v2064()
 
 	local function v2149()
 		local Players2 = game:GetService("Players")
@@ -16872,7 +17025,7 @@ do
 			local v2171 = tonumber(senaV4Config.StealPlayerMinValue) or 0
 
 			if v2171 > 0 then
-				if (genv.__SenaV4Webhook and genv.__SenaV4Webhook.rateOf(p630) or 0) < v2171 then
+				if (genv.__RiuuV4Webhook and genv.__RiuuV4Webhook.rateOf(p630) or 0) < v2171 then
 					return false
 				end
 			end
@@ -18089,10 +18242,10 @@ do
 						return false
 					end
 
-					if genv.__SenaV4Webhook then
+					if genv.__RiuuV4Webhook then
 						local ok, result = pcall(p654.catalog.resolve, u2359)
 
-						pcall(genv.__SenaV4Webhook.stolen, u2359, ok and result or nil, "player carry")
+						pcall(genv.__RiuuV4Webhook.stolen, u2359, ok and result or nil, "player carry")
 					end
 
 					return true
@@ -18154,7 +18307,7 @@ do
 				while true do
 					task.wait(0.4)
 
-					if genv.ChloeX_Running == nil and genv.__SenaV4PlayerSteal ~= p656 then
+					if genv.ChloeX_Running == nil and genv.__RiuuV4PlayerSteal ~= p656 then
 						break
 					end
 
@@ -18165,9 +18318,9 @@ do
 					end
 
 					local eggRuntime = p656.eggRuntime
-					local __SenaV4ScrambleRuntime = genv.__SenaV4ScrambleRuntime
+					local __RiuuV4ScrambleRuntime = genv.__RiuuV4ScrambleRuntime
 
-					if p656.enabled and not p656.running and (not eggRuntime or not eggRuntime.running and (not eggRuntime.carry or not eggRuntime.carry.active)) and (__SenaV4ScrambleRuntime == nil or __SenaV4ScrambleRuntime.active ~= true) then
+					if p656.enabled and not p656.running and (not eggRuntime or not eggRuntime.running and (not eggRuntime.carry or not eggRuntime.carry.active)) and (__RiuuV4ScrambleRuntime == nil or __RiuuV4ScrambleRuntime.active ~= true) then
 						local v2372 = p656:_pick()
 
 						if v2372 then
@@ -18188,10 +18341,10 @@ do
 	v614 = v1885.new(v612)
 	v614:install()
 	v614:setEnabled(senaV4Config.AntiGuardKnockback == true)
-	genv.__SenaV4AntiGuard = v614
+	genv.__RiuuV4AntiGuard = v614
 	v615 = v1932.new(v612)
 	v615:setEnabled(senaV4Config.GodMode == nil and true or senaV4Config.GodMode == true)
-	genv.__SenaV4GodMode = v615
+	genv.__RiuuV4GodMode = v615
 
 	local v2374 = v2373.new(v612, v615, v611)
 
@@ -18246,7 +18399,7 @@ do
 
 			local BodyVelocity = Instance.new("BodyVelocity")
 
-			BodyVelocity.Name = "SenaFlyCaptureHover"
+			BodyVelocity.Name = "RiuuFlyCaptureHover"
 			BodyVelocity.MaxForce = Vector3.new(0, 9e9, 0)
 			BodyVelocity.Velocity = Vector3.zero
 			BodyVelocity.Parent = p658
@@ -18254,9 +18407,9 @@ do
 		end
 
 		local function v2385()
-			local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+			local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-			return __SenaV4TreadmillManager ~= nil and not __SenaV4TreadmillManager.destroyed and __SenaV4TreadmillManager.config ~= nil and __SenaV4TreadmillManager.config.idleFarm == true
+			return __RiuuV4TreadmillManager ~= nil and not __RiuuV4TreadmillManager.destroyed and __RiuuV4TreadmillManager.config ~= nil and __RiuuV4TreadmillManager.config.idleFarm == true
 		end
 
 		local t94 = {
@@ -18307,11 +18460,11 @@ do
 				p659.flyMover = nil
 			end
 
-			local SenaFlyCaptureHover = p660 and p660:FindFirstChild("SenaFlyCaptureHover")
+			local RiuuFlyCaptureHover = p660 and p660:FindFirstChild("RiuuFlyCaptureHover")
 
-			if SenaFlyCaptureHover then
+			if RiuuFlyCaptureHover then
 				pcall(function()
-					SenaFlyCaptureHover:Destroy()
+					RiuuFlyCaptureHover:Destroy()
 				end)
 			end
 		end
@@ -18335,9 +18488,9 @@ do
 						local running = not v2388() or v2385() or next(t9) ~= nil or v612 and (v612.running or v612.activeTween)
 
 						if not running then
-							local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+							local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-							if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+							if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 								running = true
 							end
 						end
@@ -18397,11 +18550,11 @@ do
 			local v2401 = p661:_root()
 
 			if v2401 then
-				local SenaFlyCaptureHover = v2401:FindFirstChild("SenaFlyCaptureHover")
+				local RiuuFlyCaptureHover = v2401:FindFirstChild("RiuuFlyCaptureHover")
 
-				if SenaFlyCaptureHover then
+				if RiuuFlyCaptureHover then
 					pcall(function()
-						SenaFlyCaptureHover:Destroy()
+						RiuuFlyCaptureHover:Destroy()
 					end)
 				end
 
@@ -18673,9 +18826,9 @@ do
 			end
 		end
 		t93._applySpeedMultiplier = function(p678)
-			local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+			local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-			if __SenaV4TreadmillManager and __SenaV4TreadmillManager.activeTreadmill ~= nil then
+			if __RiuuV4TreadmillManager and __RiuuV4TreadmillManager.activeTreadmill ~= nil then
 				return
 			end
 
@@ -18725,7 +18878,7 @@ do
 
 	local v2428 = v2375().new()
 
-	genv.__SenaV4MovementExtras = v2428
+	genv.__RiuuV4MovementExtras = v2428
 
 	if senaV4Config.FlyForCapture then
 		v2428:setFlyForCapture(true)
@@ -18831,21 +18984,21 @@ do
 			return Guard
 		end
 		t95._skips = function(p685, p686)
-			local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+			local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-			if __SenaV4EggRuntime then
-				if __SenaV4EggRuntime.instantPhase == "priming" then
+			if __RiuuV4EggRuntime then
+				if __RiuuV4EggRuntime.instantPhase == "priming" then
 					return true
 				end
 
-				if __SenaV4EggRuntime.enabled or __SenaV4EggRuntime.running then
+				if __RiuuV4EggRuntime.enabled or __RiuuV4EggRuntime.running then
 					return true
 				end
 			end
 
-			local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+			local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-			if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+			if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 				return true
 			end
 
@@ -18875,7 +19028,7 @@ do
 					end)
 				end
 
-				clone.Name = "SenaAntiHitGhost"
+				clone.Name = "RiuuAntiHitGhost"
 
 				for _, descendant in ipairs(clone:GetDescendants()) do
 					if descendant:IsA("LuaSourceContainer") or descendant:IsA("Sound") then
@@ -19109,13 +19262,13 @@ do
 
 	local v2489 = v2429().new()
 
-	genv.__SenaV4AntiHitGuard = v2489
+	genv.__RiuuV4AntiHitGuard = v2489
 
 	if senaV4Config.AntiHitGuard then
 		v2489:setEnabled(true)
 	end
 
-	genv.__SenaV4PlayerSteal = v2374
+	genv.__RiuuV4PlayerSteal = v2374
 end
 
 do
@@ -19124,20 +19277,20 @@ do
 		value = false
 	}
 
-	genv.__SenaV4StealWantsCharacter = function()
-		local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+	genv.__RiuuV4StealWantsCharacter = function()
+		local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-		if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+		if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 			return true
 		end
 
-		local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+		local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-		if not __SenaV4EggRuntime or not __SenaV4EggRuntime.enabled or __SenaV4EggRuntime.destroyed then
+		if not __RiuuV4EggRuntime or not __RiuuV4EggRuntime.enabled or __RiuuV4EggRuntime.destroyed then
 			return false
 		end
 
-		if __SenaV4EggRuntime.running or __SenaV4EggRuntime.activeTween and not __SenaV4EggRuntime.activeTween.sharedTravel or __SenaV4EggRuntime.carry and __SenaV4EggRuntime.carry.active then
+		if __RiuuV4EggRuntime.running or __RiuuV4EggRuntime.activeTween and not __RiuuV4EggRuntime.activeTween.sharedTravel or __RiuuV4EggRuntime.carry and __RiuuV4EggRuntime.carry.active then
 			return true
 		end
 
@@ -19150,17 +19303,17 @@ do
 		t97.at = now
 
 		local ok, result = pcall(function()
-			return __SenaV4EggRuntime:_wallOpen() and __SenaV4EggRuntime:_chooseTarget() or nil
+			return __RiuuV4EggRuntime:_wallOpen() and __RiuuV4EggRuntime:_chooseTarget() or nil
 		end)
 
 		t97.value = ok and result ~= nil
 
 		return t97.value
 	end
-	genv.__SenaV4DronesWantCharacter = function()
-		local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+	genv.__RiuuV4DronesWantCharacter = function()
+		local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-		return __SenaV4ButterflyRuntime ~= nil and (__SenaV4ButterflyRuntime.active == true or __SenaV4ButterflyRuntime.wantsCharacter == true)
+		return __RiuuV4ButterflyRuntime ~= nil and (__RiuuV4ButterflyRuntime.active == true or __RiuuV4ButterflyRuntime.wantsCharacter == true)
 	end
 end
 
@@ -19211,7 +19364,7 @@ if senaV4Config.StealNamesFilter and not table.find(senaV4Config.StealNamesFilte
 end
 
 do
-	genv.__SenaV4EggRuntimeCleanup = function()
+	genv.__RiuuV4EggRuntimeCleanup = function()
 		if v612 then
 			pcall(v612.destroy, v612)
 		end
@@ -19220,15 +19373,15 @@ do
 			pcall(v613.destroy, v613)
 		end
 
-		if genv.__SenaV4EggRuntime == v612 then
-			genv.__SenaV4EggRuntime = nil
+		if genv.__RiuuV4EggRuntime == v612 then
+			genv.__RiuuV4EggRuntime = nil
 		end
 
-		if genv.__SenaV4TreadmillManager == v613 then
-			genv.__SenaV4TreadmillManager = nil
+		if genv.__RiuuV4TreadmillManager == v613 then
+			genv.__RiuuV4TreadmillManager = nil
 		end
 	end
-	genv.__SenaV4AntiGuardCleanup = function()
+	genv.__RiuuV4AntiGuardCleanup = function()
 		if v614 then
 			pcall(v614.destroy, v614)
 		end
@@ -19237,12 +19390,12 @@ do
 			pcall(v615.destroy, v615)
 		end
 
-		if genv.__SenaV4AntiGuard == v614 then
-			genv.__SenaV4AntiGuard = nil
+		if genv.__RiuuV4AntiGuard == v614 then
+			genv.__RiuuV4AntiGuard = nil
 		end
 
-		if genv.__SenaV4GodMode == v615 then
-			genv.__SenaV4GodMode = nil
+		if genv.__RiuuV4GodMode == v615 then
+			genv.__RiuuV4GodMode = nil
 		end
 	end
 end
@@ -19404,11 +19557,11 @@ do
 	local function v2524()
 		local genv2 = getgenv and getgenv() or _G
 
-		genv2.__SenaV4AntiAfkGeneration = (genv2.__SenaV4AntiAfkGeneration or 0) + 1
-		genv2.__SenaV4AntiAfkEnabled = senaV4Config.AntiAFK
-		genv2.__SenaV4StartupProtection = t101
-		genv2.__SenaV4SetAntiAfkEnabled = function(p699)
-			genv2.__SenaV4AntiAfkEnabled = p699 == true
+		genv2.__RiuuV4AntiAfkGeneration = (genv2.__RiuuV4AntiAfkGeneration or 0) + 1
+		genv2.__RiuuV4AntiAfkEnabled = senaV4Config.AntiAFK
+		genv2.__RiuuV4StartupProtection = t101
+		genv2.__RiuuV4SetAntiAfkEnabled = function(p699)
+			genv2.__RiuuV4AntiAfkEnabled = p699 == true
 
 			if p699 then
 				t101.install()
@@ -19418,7 +19571,7 @@ do
 		end
 
 		if senaV4Config.AntiAFK then
-			genv2.__SenaV4SetAntiAfkEnabled(true)
+			genv2.__RiuuV4SetAntiAfkEnabled(true)
 		end
 	end
 
@@ -19815,7 +19968,7 @@ local function v2540()
 	return t106
 end
 
-genv.__SenaV4PetBarn = v2540()
+genv.__RiuuV4PetBarn = v2540()
 
 do
 	local function v2591()
@@ -19875,7 +20028,7 @@ do
 		return t107
 	end
 
-	genv.__SenaV4Upgrades = v2591()
+	genv.__RiuuV4Upgrades = v2591()
 end
 
 local function v2604()
@@ -19907,7 +20060,7 @@ local function v2604()
 
 				for _, descendant in ipairs(Character:GetDescendants()) do
 					if descendant:IsA("BasePart") and descendant.CanCollide then
-						descendant:SetAttribute("SenaNoclip", true)
+						descendant:SetAttribute("RiuuNoclip", true)
 						descendant.CanCollide = false
 					end
 				end
@@ -19920,9 +20073,9 @@ local function v2604()
 
 		if Character then
 			for _, descendant in ipairs(Character:GetDescendants()) do
-				if descendant:IsA("BasePart") and descendant:GetAttribute("SenaNoclip") then
+				if descendant:IsA("BasePart") and descendant:GetAttribute("RiuuNoclip") then
 					descendant.CanCollide = true
-					descendant:SetAttribute("SenaNoclip", nil)
+					descendant:SetAttribute("RiuuNoclip", nil)
 				end
 			end
 		end
@@ -20002,15 +20155,15 @@ local function v2604()
 	t108.setBottingMode = function(p706)
 		senaV4Config.BottingMode = p706 == true
 
-		local __SenaV4BottingOverlay = genv.__SenaV4BottingOverlay
+		local __RiuuV4BottingOverlay = genv.__RiuuV4BottingOverlay
 
-		if __SenaV4BottingOverlay and __SenaV4BottingOverlay.Parent then
+		if __RiuuV4BottingOverlay and __RiuuV4BottingOverlay.Parent then
 			pcall(function()
-				__SenaV4BottingOverlay:Destroy()
+				__RiuuV4BottingOverlay:Destroy()
 			end)
 		end
 
-		genv.__SenaV4BottingOverlay = nil
+		genv.__RiuuV4BottingOverlay = nil
 
 		if not senaV4Config.BottingMode then
 			pcall(function()
@@ -20037,7 +20190,7 @@ local function v2604()
 
 		local ScreenGui = Instance.new("ScreenGui")
 
-		ScreenGui.Name = "SenaBottingOverlay"
+		ScreenGui.Name = "RiuuBottingOverlay"
 		ScreenGui.ResetOnSpawn = false
 		ScreenGui.IgnoreGuiInset = true
 		ScreenGui.DisplayOrder = -1
@@ -20051,7 +20204,7 @@ local function v2604()
 		Frame.BorderSizePixel = 0
 		Frame.Active = false
 		Frame.Parent = ScreenGui
-		genv.__SenaV4BottingOverlay = ScreenGui
+		genv.__RiuuV4BottingOverlay = ScreenGui
 	end
 	task.spawn(function()
 		while v16() do
@@ -20076,7 +20229,7 @@ local function v2604()
 	return t108
 end
 
-genv.__SenaV4Roaming = v2604()
+genv.__RiuuV4Roaming = v2604()
 
 do
 	local function v2639()
@@ -20256,7 +20409,7 @@ do
 		return t110
 	end
 
-	genv.__SenaV4ScrambleRuntime = v2639()
+	genv.__RiuuV4ScrambleRuntime = v2639()
 end
 
 local function v2666()
@@ -20300,9 +20453,9 @@ local function v2666()
 				end
 			end
 
-			local __SenaV4StealWantsCharacter = genv.__SenaV4StealWantsCharacter
+			local __RiuuV4StealWantsCharacter = genv.__RiuuV4StealWantsCharacter
 
-			if __SenaV4StealWantsCharacter and __SenaV4StealWantsCharacter() then
+			if __RiuuV4StealWantsCharacter and __RiuuV4StealWantsCharacter() then
 				return "auto_steal"
 			end
 
@@ -20668,7 +20821,7 @@ local function v2666()
 		if not t119.part or not t119.part.Parent then
 			local Part = Instance.new("Part")
 
-			Part.Name = "SenaBloomPad"
+			Part.Name = "RiuuBloomPad"
 			Part.Anchored = true
 			Part.CanCollide = true
 			Part.CanTouch = false
@@ -20904,9 +21057,9 @@ local function v2666()
 		return v2794 and v2794.Position + Vector3.new(0, 4, 0) or nil
 	end
 	local function v2795()
-		local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+		local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-		if not __SenaV4TreadmillManager or __SenaV4TreadmillManager.activeTreadmill == nil then
+		if not __RiuuV4TreadmillManager or __RiuuV4TreadmillManager.activeTreadmill == nil then
 			return
 		end
 
@@ -20914,8 +21067,8 @@ local function v2666()
 
 		local v2797 = os.clock() + 5
 
-		while __SenaV4TreadmillManager.activeTreadmill ~= nil and os.clock() < v2797 do
-			__SenaV4TreadmillManager:_requestUnequip()
+		while __RiuuV4TreadmillManager.activeTreadmill ~= nil and os.clock() < v2797 do
+			__RiuuV4TreadmillManager:_requestUnequip()
 			task.wait(0.3)
 		end
 
@@ -20928,15 +21081,15 @@ local function v2666()
 		end
 	end
 	local function v2799()
-		local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+		local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-		if not __SenaV4TreadmillManager or __SenaV4TreadmillManager.destroyed or not __SenaV4TreadmillManager.config.idleFarm then
+		if not __RiuuV4TreadmillManager or __RiuuV4TreadmillManager.destroyed or not __RiuuV4TreadmillManager.config.idleFarm then
 			return false
 		end
 
-		if not __SenaV4TreadmillManager.busy and not __SenaV4TreadmillManager.idleRunning then
+		if not __RiuuV4TreadmillManager.busy and not __RiuuV4TreadmillManager.idleRunning then
 			task.defer(function()
-				__SenaV4TreadmillManager:_startIdle()
+				__RiuuV4TreadmillManager:_startIdle()
 			end)
 		end
 
@@ -21261,7 +21414,7 @@ local function v2666()
 
 		if not Folder or not Folder.Parent then
 			Folder = Instance.new("Folder")
-			Folder.Name = "SenaBloomEsp"
+			Folder.Name = "RiuuBloomEsp"
 			Folder.Parent = CurrentCamera
 		end
 
@@ -21826,9 +21979,9 @@ local function v2666()
 			return
 		end
 
-		local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+		local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-		if __SenaV4TreadmillManager and __SenaV4TreadmillManager.activeTreadmill ~= nil then
+		if __RiuuV4TreadmillManager and __RiuuV4TreadmillManager.activeTreadmill ~= nil then
 			v2795()
 		end
 
@@ -21988,7 +22141,7 @@ local function v2666()
 		v2751()
 		v2855()
 	end)
-	genv.__SenaV4ButterflyRuntime = t111
+	genv.__RiuuV4ButterflyRuntime = t111
 end
 
 v2666()
@@ -22057,7 +22210,7 @@ local function v3016()
 	return v3026
 end
 
-genv.__SenaV4IsBatTool = v3016()
+genv.__RiuuV4IsBatTool = v3016()
 
 do
 	local Players2 = game:GetService("Players")
@@ -22133,11 +22286,11 @@ do
 		return false
 	end
 	local function v3059()
-		local SenaCapturePlatform = workspace:FindFirstChild("SenaCapturePlatform")
+		local RiuuCapturePlatform = workspace:FindFirstChild("RiuuCapturePlatform")
 
-		if SenaCapturePlatform then
+		if RiuuCapturePlatform then
 			pcall(function()
-				SenaCapturePlatform:Destroy()
+				RiuuCapturePlatform:Destroy()
 			end)
 		end
 	end
@@ -22148,23 +22301,23 @@ do
 			return
 		end
 
-		local SenaCapturePlatform = workspace:FindFirstChild("SenaCapturePlatform")
+		local RiuuCapturePlatform = workspace:FindFirstChild("RiuuCapturePlatform")
 
-		if not SenaCapturePlatform then
-			SenaCapturePlatform = Instance.new("Part")
-			SenaCapturePlatform.Name = "SenaCapturePlatform"
-			SenaCapturePlatform.Anchored = true
-			SenaCapturePlatform.CanCollide = true
-			SenaCapturePlatform.Size = Vector3.new(30, 1, 30)
-			SenaCapturePlatform.Transparency = 0.5
-			SenaCapturePlatform.Material = Enum.Material.Neon
-			SenaCapturePlatform.Color = Color3.fromRGB(130, 90, 255)
-			SenaCapturePlatform.TopSurface = Enum.SurfaceType.Smooth
-			SenaCapturePlatform.BottomSurface = Enum.SurfaceType.Smooth
-			SenaCapturePlatform.Parent = workspace
+		if not RiuuCapturePlatform then
+			RiuuCapturePlatform = Instance.new("Part")
+			RiuuCapturePlatform.Name = "RiuuCapturePlatform"
+			RiuuCapturePlatform.Anchored = true
+			RiuuCapturePlatform.CanCollide = true
+			RiuuCapturePlatform.Size = Vector3.new(30, 1, 30)
+			RiuuCapturePlatform.Transparency = 0.5
+			RiuuCapturePlatform.Material = Enum.Material.Neon
+			RiuuCapturePlatform.Color = Color3.fromRGB(130, 90, 255)
+			RiuuCapturePlatform.TopSurface = Enum.SurfaceType.Smooth
+			RiuuCapturePlatform.BottomSurface = Enum.SurfaceType.Smooth
+			RiuuCapturePlatform.Parent = workspace
 		end
 
-		SenaCapturePlatform.CFrame = cFrameNew(v3062.Position.X, v3062.Position.Y - 3.4, v3062.Position.Z)
+		RiuuCapturePlatform.CFrame = cFrameNew(v3062.Position.X, v3062.Position.Y - 3.4, v3062.Position.Z)
 	end
 	local function v3064()
 		if t129.pinConn then
@@ -22264,7 +22417,7 @@ do
 					elseif not v3076 then
 						t129.holding = false
 
-						if t129.pinConn or workspace:FindFirstChild("SenaCapturePlatform") then
+						if t129.pinConn or workspace:FindFirstChild("RiuuCapturePlatform") then
 							v3066()
 						end
 
@@ -22273,7 +22426,7 @@ do
 						v3064()
 						t129.status = "Egg taken - holding position"
 					else
-						if t129.pinConn or workspace:FindFirstChild("SenaCapturePlatform") then
+						if t129.pinConn or workspace:FindFirstChild("RiuuCapturePlatform") then
 							v3066()
 						end
 
@@ -22285,7 +22438,7 @@ do
 
 				task.wait(0.3)
 			else
-				if t129.pinConn or workspace:FindFirstChild("SenaCapturePlatform") then
+				if t129.pinConn or workspace:FindFirstChild("RiuuCapturePlatform") then
 					v3066()
 				end
 
@@ -22295,7 +22448,7 @@ do
 			end
 		end
 	end)
-	genv.__SenaV4AutoCapture = t129
+	genv.__RiuuV4AutoCapture = t129
 end
 
 do
@@ -22622,7 +22775,7 @@ do
 			end
 		end
 	end
-	genv.__SenaV4VisualSAE = t130
+	genv.__RiuuV4VisualSAE = t130
 end
 
 do
@@ -22693,14 +22846,14 @@ do
 				return t132.manifest
 			end
 
-			v3149("SenaVisual/cache")
+			v3149("RiuuVisual/cache")
 
 			local json = v3152(t132.base .. "manifest.json")
 
 			if json then
-				pcall(writefile, "SenaVisual/cache/manifest.json", json)
-			elseif isfile("SenaVisual/cache/manifest.json") then
-				json = readfile("SenaVisual/cache/manifest.json")
+				pcall(writefile, "RiuuVisual/cache/manifest.json", json)
+			elseif isfile("RiuuVisual/cache/manifest.json") then
+				json = readfile("RiuuVisual/cache/manifest.json")
 			end
 
 			local ok, manifest = pcall(function()
@@ -22746,7 +22899,7 @@ do
 			return nil
 		end
 		local function v3171(p786, p787)
-			local v3172 = "SenaVisual/cache" .. "/" .. p786
+			local v3172 = "RiuuVisual/cache" .. "/" .. p786
 
 			v3149(v3172)
 
@@ -22917,7 +23070,7 @@ do
 
 			if Character then
 				for _, child in ipairs(Character:GetChildren()) do
-					if child:IsA("Tool") and child:GetAttribute("SenaVisual") or child.Name == "SenaVisualBack" then
+					if child:IsA("Tool") and child:GetAttribute("RiuuVisual") or child.Name == "RiuuVisualBack" then
 						v3213 = true
 
 						break
@@ -23182,7 +23335,7 @@ do
 		local function v3296(p804)
 			local clone = p804.model:Clone()
 
-			clone.Name = "SenaVisualBack"
+			clone.Name = "RiuuVisualBack"
 
 			for _, descendant in ipairs(clone:GetDescendants()) do
 				if descendant:IsA("BasePart") then
@@ -23336,7 +23489,7 @@ do
 			Tool.Name = p816.name
 			Tool.CanBeDropped = false
 			Tool.RequiresHandle = false
-			Tool:SetAttribute("SenaVisual", p815)
+			Tool:SetAttribute("RiuuVisual", p815)
 
 			if p815 == "fish" then
 				Tool:SetAttribute("ItemType", "Phone")
@@ -23447,7 +23600,7 @@ do
 
 			local v3346 = Backpack:FindFirstChild(v3344.name)
 
-			if v3346 and v3346:GetAttribute("SenaVisual") then
+			if v3346 and v3346:GetAttribute("RiuuVisual") then
 				t132.status = v3344.name .. " is already in your backpack"
 
 				return true
@@ -23497,7 +23650,7 @@ do
 				for _, v2 in ipairs_(t141) do
 					local VLabel = v2 and v2:FindFirstChild(v.label)
 
-					if VLabel and VLabel:IsA("Tool") and VLabel:GetAttribute("SenaVisual") then
+					if VLabel and VLabel:IsA("Tool") and VLabel:GetAttribute("RiuuVisual") then
 						VLabel:Destroy()
 					end
 				end
@@ -23517,7 +23670,7 @@ do
 			for _, v in ipairs_(t142) do
 				if v then
 					for _, child in ipairs(v:GetChildren()) do
-						if child:IsA("Tool") and child:GetAttribute("SenaVisual") then
+						if child:IsA("Tool") and child:GetAttribute("RiuuVisual") then
 							child:Destroy()
 						end
 					end
@@ -23580,7 +23733,7 @@ do
 				local v3383 = v3285(v3379, v3382, v3379 == "fish" and (v3381 or 0) or 0, v3379 == "rods" and (v3381 or 1) or 1)
 
 				if v3383 and t132.remote[p823] == t143 and Character.Parent then
-					v3383.model.Name = "SenaVisualRemote"
+					v3383.model.Name = "RiuuVisualRemote"
 					v3383.model.Parent = Character
 					table.insert(t143.cleanup, (v3379 == "rods" and v3303 or v3319)(Character, v3383.handle, v3383))
 					table.insert(t143.cleanup, function()
@@ -23626,15 +23779,15 @@ do
 						return
 					end
 
-					local SenaBackend = genv.SenaBackend or {}
-					local Api = SenaBackend.Api or "http://56.10.112.179:8080"
+					local RiuuBackend = genv.RiuuBackend or {}
+					local Api = RiuuBackend.Api or "http://56.10.112.179:8080"
 					local s9 = ""
 					local s10 = ""
 					local Character = LocalPlayer.Character
 
 					if Character then
 						for _, child in ipairs(Character:GetChildren()) do
-							local attribute = child:IsA("Tool") and child:GetAttribute("SenaVisual")
+							local attribute = child:IsA("Tool") and child:GetAttribute("RiuuVisual")
 
 							if attribute then
 								s9 = attribute .. "|" .. child.Name .. "|" .. tostring(attribute == "fish" and t132.fishWeight or t132.rodScale)
@@ -23643,12 +23796,12 @@ do
 							end
 						end
 
-						if Character:FindFirstChild("SenaVisualBack") and t132.backRod then
+						if Character:FindFirstChild("RiuuVisualBack") and t132.backRod then
 							s10 = "rods|" .. t132.backRod.Name
 						end
 					end
 
-					local data = HttpService:JSONDecode(game:HttpGet(string.format("%s/vstate?key=%s&job=%s&uid=%d&held=%s&back=%s", Api, HttpService:UrlEncode(SenaBackend.Key or "sena_20VvixjHsd1OPPwgHYJAstpM"), HttpService:UrlEncode(game.JobId), LocalPlayer.UserId, HttpService:UrlEncode(s9), HttpService:UrlEncode(s10)), true))
+					local data = HttpService:JSONDecode(game:HttpGet(string.format("%s/vstate?key=%s&job=%s&uid=%d&held=%s&back=%s", Api, HttpService:UrlEncode(RiuuBackend.Key or "sena_20VvixjHsd1OPPwgHYJAstpM"), HttpService:UrlEncode(game.JobId), LocalPlayer.UserId, HttpService:UrlEncode(s9), HttpService:UrlEncode(s10)), true))
 
 					if type(data) ~= "table" or data.ok ~= true then
 						return
@@ -23695,7 +23848,7 @@ do
 		return t132
 	end
 
-	genv.__SenaV4Visual = v3143()
+	genv.__RiuuV4Visual = v3143()
 end
 
 do
@@ -23895,15 +24048,15 @@ do
 			return true
 		end
 
-		local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+		local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-		if __SenaV4EggRuntime and (__SenaV4EggRuntime.running or __SenaV4EggRuntime.travelBusy or __SenaV4EggRuntime.carry and __SenaV4EggRuntime.carry.active) then
+		if __RiuuV4EggRuntime and (__RiuuV4EggRuntime.running or __RiuuV4EggRuntime.travelBusy or __RiuuV4EggRuntime.carry and __RiuuV4EggRuntime.carry.active) then
 			return true
 		end
 
-		local __SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+		local __RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 
-		if __SenaV4PlayerSteal and __SenaV4PlayerSteal.running then
+		if __RiuuV4PlayerSteal and __RiuuV4PlayerSteal.running then
 			return true
 		end
 
@@ -23923,9 +24076,9 @@ do
 
 				if senaV4Config.HopNoMatch and not t145.hubBusy() then
 					if (tonumber(senaV4Config.HopCooldown) or 5) < os.clock() - t145.lastHopAt then
-						local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+						local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-						if senaV4Config.AutoSteal and (__SenaV4EggRuntime and __SenaV4EggRuntime.stats and __SenaV4EggRuntime.stats.matching or 0) <= 0 and not v177() then
+						if senaV4Config.AutoSteal and (__RiuuV4EggRuntime and __RiuuV4EggRuntime.stats and __RiuuV4EggRuntime.stats.matching or 0) <= 0 and not v177() then
 							t145.lastHopAt = os.clock()
 							t145.hopEmptiest()
 						end
@@ -23945,12 +24098,12 @@ do
 		task.spawn(function()
 			while v16() do
 				if senaV4Config.AntiTreadmill then
-					local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+					local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
 					pcall(function()
-						if __SenaV4TreadmillManager and __SenaV4TreadmillManager.activeTreadmill ~= nil then
-							__SenaV4TreadmillManager:_cancelIdle(true)
-							__SenaV4TreadmillManager:_requestUnequip()
+						if __RiuuV4TreadmillManager and __RiuuV4TreadmillManager.activeTreadmill ~= nil then
+							__RiuuV4TreadmillManager:_cancelIdle(true)
+							__RiuuV4TreadmillManager:_requestUnequip()
 						end
 					end)
 
@@ -23991,13 +24144,13 @@ do
 						ScrollingFrame = LocalPlayer.PlayerGui.BackpackGui.Backpack.Main.Inventory.ScrollingFrame
 					end)
 
-					local __SenaV4Webhook = genv.__SenaV4Webhook
-					local SenaDiscord = ScrollingFrame and ScrollingFrame.Parent:FindFirstChild("SenaDiscord")
+					local __RiuuV4Webhook = genv.__RiuuV4Webhook
+					local RiuuDiscord = ScrollingFrame and ScrollingFrame.Parent:FindFirstChild("RiuuDiscord")
 
-					if ScrollingFrame and senaV4Config.BackpackRateEsp and not SenaDiscord then
+					if ScrollingFrame and senaV4Config.BackpackRateEsp and not RiuuDiscord then
 						local TextLabel = Instance.new("TextLabel")
 
-						TextLabel.Name = "SenaDiscord"
+						TextLabel.Name = "RiuuDiscord"
 						TextLabel.BackgroundTransparency = 1
 						TextLabel.Position = UDim2.new(0.34, 0, 0.017, 0)
 						TextLabel.Size = UDim2.new(0.3, 0, 0.09, 0)
@@ -24009,14 +24162,14 @@ do
 						TextLabel.TextStrokeTransparency = 0
 						TextLabel.ZIndex = 40
 						TextLabel.Parent = ScrollingFrame.Parent
-					elseif SenaDiscord and not senaV4Config.BackpackRateEsp then
-						SenaDiscord:Destroy()
+					elseif RiuuDiscord and not senaV4Config.BackpackRateEsp then
+						RiuuDiscord:Destroy()
 					end
 
 					if ScrollingFrame then
 						local t149 = {}
 
-						if senaV4Config.BackpackRateEsp and EggRecords and Save and __SenaV4Webhook then
+						if senaV4Config.BackpackRateEsp and EggRecords and Save and __RiuuV4Webhook then
 							local v3454 = (Save.Peek or Save.Get)()
 							local pairs_ = pairs
 							local EggInventory = v3454 and v3454.EggInventory or {}
@@ -24040,40 +24193,40 @@ do
 								local Text = ToolName.Text
 								local v3466 = (t150[Text] or 0) + 1
 								local v3467 = t149[Text] and t149[Text][v3466]
-								local SenaRate = child:FindFirstChild("SenaRate")
+								local RiuuRate = child:FindFirstChild("RiuuRate")
 
 								if v3467 then
 									t150[Text] = v3466
 
-									if not SenaRate then
-										SenaRate = Instance.new("TextLabel")
-										SenaRate.Name = "SenaRate"
-										SenaRate.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-										SenaRate.BackgroundTransparency = 0.35
-										SenaRate.BorderSizePixel = 0
-										SenaRate.Position = UDim2.new(0.04, 0, 0, 3)
-										SenaRate.Size = UDim2.new(0.92, 0, 0.24, 0)
-										SenaRate.Font = Enum.Font.GothamBlack
-										SenaRate.TextScaled = true
-										SenaRate.TextColor3 = Color3.fromRGB(73, 211, 31)
-										SenaRate.TextStrokeTransparency = 0
-										SenaRate.ZIndex = 40
+									if not RiuuRate then
+										RiuuRate = Instance.new("TextLabel")
+										RiuuRate.Name = "RiuuRate"
+										RiuuRate.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+										RiuuRate.BackgroundTransparency = 0.35
+										RiuuRate.BorderSizePixel = 0
+										RiuuRate.Position = UDim2.new(0.04, 0, 0, 3)
+										RiuuRate.Size = UDim2.new(0.92, 0, 0.24, 0)
+										RiuuRate.Font = Enum.Font.GothamBlack
+										RiuuRate.TextScaled = true
+										RiuuRate.TextColor3 = Color3.fromRGB(73, 211, 31)
+										RiuuRate.TextStrokeTransparency = 0
+										RiuuRate.ZIndex = 40
 
 										local UICorner = Instance.new("UICorner")
 
 										UICorner.CornerRadius = UDim.new(0, 6)
-										UICorner.Parent = SenaRate
+										UICorner.Parent = RiuuRate
 
 										local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
 
 										UITextSizeConstraint.MaxTextSize = 20
-										UITextSizeConstraint.Parent = SenaRate
-										SenaRate.Parent = child
+										UITextSizeConstraint.Parent = RiuuRate
+										RiuuRate.Parent = child
 									end
 
-									SenaRate.Text = __SenaV4Webhook.compact(__SenaV4Webhook.rateOf(v3467)) .. "/s"
-								elseif SenaRate then
-									SenaRate:Destroy()
+									RiuuRate.Text = __RiuuV4Webhook.compact(__RiuuV4Webhook.rateOf(v3467)) .. "/s"
+								elseif RiuuRate then
+									RiuuRate:Destroy()
 								end
 							end
 						end
@@ -24593,7 +24746,7 @@ do
 				task.wait(1)
 			end
 		end)
-		genv.__SenaV4ScrambleTradeIn = t151
+		genv.__RiuuV4ScrambleTradeIn = t151
 	end
 
 	v3471()
@@ -24661,9 +24814,9 @@ do
 		t163.amInArena = amInArena
 
 		local function v3599()
-			local __SenaV4StealWantsCharacter = genv.__SenaV4StealWantsCharacter
+			local __RiuuV4StealWantsCharacter = genv.__RiuuV4StealWantsCharacter
 
-			return senaV4Config.AutoSteal == true and __SenaV4StealWantsCharacter ~= nil and __SenaV4StealWantsCharacter() == true
+			return senaV4Config.AutoSteal == true and __RiuuV4StealWantsCharacter ~= nil and __RiuuV4StealWantsCharacter() == true
 		end
 
 		local t164 = {}
@@ -24800,12 +24953,12 @@ do
 				return nil
 			end
 
-			local __SenaV4IsBatTool = genv.__SenaV4IsBatTool or function(p860)
+			local __RiuuV4IsBatTool = genv.__RiuuV4IsBatTool or function(p860)
 				return p860:IsA("Tool") and p860:GetAttribute("IsBat") == true
 			end
 
 			for _, child in ipairs(v3634:GetChildren()) do
-				if not __SenaV4IsBatTool(child) then
+				if not __RiuuV4IsBatTool(child) then
 					continue
 				end
 
@@ -24816,7 +24969,7 @@ do
 
 			if Backpack and v3633 then
 				for _, child in ipairs(Backpack:GetChildren()) do
-					if not __SenaV4IsBatTool(child) then
+					if not __RiuuV4IsBatTool(child) then
 						continue
 					end
 
@@ -25131,7 +25284,7 @@ do
 				task.wait(0.25)
 			end
 		end)
-		genv.__SenaV4ScrambleBoss = t163
+		genv.__RiuuV4ScrambleBoss = t163
 	end
 
 	v3583()
@@ -25170,8 +25323,8 @@ do
 			pcall(function()
 				if type(setthreadidentity) == "function" then
 					setthreadidentity(8)
-				elseif genv and type(genv.__SenaV4IdentitySetter) == "function" then
-					genv.__SenaV4IdentitySetter(8)
+				elseif genv and type(genv.__RiuuV4IdentitySetter) == "function" then
+					genv.__RiuuV4IdentitySetter(8)
 				end
 			end)
 		end
@@ -26714,12 +26867,12 @@ do
 				sortBtn.TextColor3 = v3976 and Color3.fromRGB(255, 255, 255) or v3697.btnText
 			end
 
-			local __SenaV4StealMode = genv.__SenaV4StealMode or "Fly"
+			local __RiuuV4StealMode = genv.__RiuuV4StealMode or "Instant"
 			local pairs_2 = pairs
 			local modeBtns = t175.modeBtns or {}
 
 			for k, modeBtn in pairs_2(modeBtns) do
-				local v3982 = __SenaV4StealMode == k
+				local v3982 = __RiuuV4StealMode == k
 
 				modeBtn.BackgroundColor3 = v3982 and v3697.accent or Color3.fromRGB(255, 255, 255)
 				modeBtn.BackgroundTransparency = v3982 and 0.12 or 0.9
@@ -27138,7 +27291,7 @@ do
 				UIStroke.Transparency = 0.7
 				TextButton2.MouseButton1Click:Connect(function()
 					v3698()
-					genv.__SenaV4StealMode = p932
+					genv.__RiuuV4StealMode = p932
 					pcall(function()
 						if type(applyStealMode) == "function" then
 							applyStealMode(p932)
@@ -27149,8 +27302,8 @@ do
 				t175.modeBtns[p932] = TextButton2
 			end
 
-			v4034("Low Speed User", "Instant")
-			v4034("High Speed User", "Fly")
+			v4034("Instant Teleport", "Instant")
+			v4034("High Speed User (Fly)", "Fly")
 
 			local ScrollingFrame2 = Instance.new("ScrollingFrame")
 
@@ -27229,10 +27382,10 @@ do
 					return
 				end
 
-				local __SenaV4EggRuntime = genv.__SenaV4EggRuntime
+				local __RiuuV4EggRuntime = genv.__RiuuV4EggRuntime
 
-				if __SenaV4EggRuntime and type(__SenaV4EggRuntime.queueManual) == "function" then
-					local v4044 = __SenaV4EggRuntime:queueManual(t189)
+				if __RiuuV4EggRuntime and type(__RiuuV4EggRuntime.queueManual) == "function" then
+					local v4044 = __RiuuV4EggRuntime:queueManual(t189)
 
 					t175.picked = {}
 					t175.statusBtn.Text = "Queued " .. v4044
@@ -27840,9 +27993,9 @@ do
 
 			t176.lastSync = now
 			task.spawn(function()
-				local SenaBackend = getgenv and getgenv().SenaBackend or {}
-				local Api = SenaBackend.Api or "http://56.10.112.179:8080"
-				local Key = SenaBackend.Key or ""
+				local RiuuBackend = getgenv and getgenv().RiuuBackend or {}
+				local Api = RiuuBackend.Api or "http://56.10.112.179:8080"
+				local Key = RiuuBackend.Key or ""
 				local v4109 = LocalPlayer and tostring(LocalPlayer.UserId) or "0"
 				local v4110 = v4069({
 					Url = Api .. "/egg/latest?key=" .. tostring(Key) .. "&uid=" .. tostring(v4109) .. "&t=" .. tostring(now),
@@ -28895,7 +29048,7 @@ do
 			TextLabel5.TextSize = 16
 			TextLabel5.TextXAlignment = Enum.TextXAlignment.Left
 			TextLabel5.TextColor3 = t166.text
-			TextLabel5.Text = "Sena"
+			TextLabel5.Text = "Riuu"
 			TextLabel5.Parent = Frame2
 
 			local ImageLabel2 = Instance.new("ImageLabel")
@@ -28904,9 +29057,11 @@ do
 			ImageLabel2.Position = UDim2.fromOffset(11, 23)
 			ImageLabel2.Size = UDim2.fromOffset(20, 20)
 			ImageLabel2.BackgroundTransparency = 1
-			ImageLabel2.Image = "rbxassetid://96240498384290"
 			ImageLabel2.ScaleType = Enum.ScaleType.Fit
 			ImageLabel2.Parent = Frame2
+			pcall(function()
+				RiuuLogoApply(ImageLabel2)
+			end)
 
 			local Frame3 = Instance.new("Frame")
 
@@ -29159,7 +29314,7 @@ do
 			v4307()
 		end
 		pcall(function()
-			getgenv().SenaPanels = senaPanels
+			getgenv().RiuuPanels = senaPanels
 		end)
 	end
 
@@ -29510,15 +29665,15 @@ do
 					end
 
 					local function v4399()
-						local __SenaV4StealWantsCharacter = genv.__SenaV4StealWantsCharacter
+						local __RiuuV4StealWantsCharacter = genv.__RiuuV4StealWantsCharacter
 
-						if __SenaV4StealWantsCharacter and __SenaV4StealWantsCharacter() then
+						if __RiuuV4StealWantsCharacter and __RiuuV4StealWantsCharacter() then
 							return true
 						end
 
-						local __SenaV4DronesWantCharacter = genv.__SenaV4DronesWantCharacter
+						local __RiuuV4DronesWantCharacter = genv.__RiuuV4DronesWantCharacter
 
-						return __SenaV4DronesWantCharacter ~= nil and __SenaV4DronesWantCharacter() == true
+						return __RiuuV4DronesWantCharacter ~= nil and __RiuuV4DronesWantCharacter() == true
 					end
 
 					if senaV4Config.IsStealing or v4399() then
@@ -29527,14 +29682,14 @@ do
 
 					senaV4Config.IsPlacing = true
 
-					local __SenaV4TreadmillManager = genv.__SenaV4TreadmillManager
+					local __RiuuV4TreadmillManager = genv.__RiuuV4TreadmillManager
 
-					if __SenaV4TreadmillManager and __SenaV4TreadmillManager.activeTreadmill ~= nil then
+					if __RiuuV4TreadmillManager and __RiuuV4TreadmillManager.activeTreadmill ~= nil then
 						local v4403 = os.clock() + 5
 
-						while __SenaV4TreadmillManager.activeTreadmill ~= nil and os.clock() < v4403 do
+						while __RiuuV4TreadmillManager.activeTreadmill ~= nil and os.clock() < v4403 do
 							pcall(function()
-								__SenaV4TreadmillManager:_requestUnequip()
+								__RiuuV4TreadmillManager:_requestUnequip()
 							end)
 							task.wait(0.3)
 						end
@@ -29838,15 +29993,15 @@ do
 						return true
 					end
 
-					local __SenaV4StealWantsCharacter = genv.__SenaV4StealWantsCharacter
+					local __RiuuV4StealWantsCharacter = genv.__RiuuV4StealWantsCharacter
 
-					if __SenaV4StealWantsCharacter and __SenaV4StealWantsCharacter() then
+					if __RiuuV4StealWantsCharacter and __RiuuV4StealWantsCharacter() then
 						return true
 					end
 
-					local __SenaV4DronesWantCharacter = genv.__SenaV4DronesWantCharacter
+					local __RiuuV4DronesWantCharacter = genv.__RiuuV4DronesWantCharacter
 
-					if __SenaV4DronesWantCharacter ~= nil and __SenaV4DronesWantCharacter() == true then
+					if __RiuuV4DronesWantCharacter ~= nil and __RiuuV4DronesWantCharacter() == true then
 						return true
 					end
 
@@ -30504,7 +30659,7 @@ do
 				return false
 			end
 
-			genv.__SenaV4IsAutoSellEggBusy = function()
+			genv.__RiuuV4IsAutoSellEggBusy = function()
 				return u4650 or v4651()
 			end
 			t24.startAutoSellEggLoop = function()
@@ -30549,8 +30704,8 @@ do
 										if v198() then
 											u4650 = true
 
-											if genv.__SenaV4TreadmillManager and genv.__SenaV4TreadmillManager.activeTreadmill ~= nil then
-												genv.__SenaV4TreadmillManager:_cancelIdle(true)
+											if genv.__RiuuV4TreadmillManager and genv.__RiuuV4TreadmillManager.activeTreadmill ~= nil then
+												genv.__RiuuV4TreadmillManager:_cancelIdle(true)
 												task.wait(0.25)
 											end
 
@@ -30640,8 +30795,8 @@ do
 					v612:setEnabled(senaV4Config.AutoSteal)
 				end
 
-				if type(genv.__SenaV4SetStealDeclutter) == "function" then
-					pcall(genv.__SenaV4SetStealDeclutter, senaV4Config.AutoSteal)
+				if type(genv.__RiuuV4SetStealDeclutter) == "function" then
+					pcall(genv.__RiuuV4SetStealDeclutter, senaV4Config.AutoSteal)
 				end
 			end
 			v4527 = function(p982)
@@ -30656,7 +30811,7 @@ do
 			end
 
 			local function v4688()
-				return genv.__SenaV4TreadmillManager
+				return genv.__RiuuV4TreadmillManager
 			end
 
 			v4529 = function(p984)
@@ -30827,10 +30982,10 @@ do
 			v4547 = function(p1004)
 				senaV4Config.AntiGuardKnockback = p1004 == true
 
-				local __SenaV4AntiGuard = genv.__SenaV4AntiGuard
+				local __RiuuV4AntiGuard = genv.__RiuuV4AntiGuard
 
-				if __SenaV4AntiGuard and type(__SenaV4AntiGuard.setEnabled) == "function" then
-					pcall(__SenaV4AntiGuard.setEnabled, __SenaV4AntiGuard, senaV4Config.AntiGuardKnockback)
+				if __RiuuV4AntiGuard and type(__RiuuV4AntiGuard.setEnabled) == "function" then
+					pcall(__RiuuV4AntiGuard.setEnabled, __RiuuV4AntiGuard, senaV4Config.AntiGuardKnockback)
 				end
 			end
 			v4548 = function(p1005)
@@ -30870,17 +31025,17 @@ do
 				senaV4Config.FuseSpecies = v4320(p1016)
 			end
 			v4560 = function(p1017)
-				local __SenaV4Roaming = genv.__SenaV4Roaming
+				local __RiuuV4Roaming = genv.__RiuuV4Roaming
 
-				if __SenaV4Roaming and type(__SenaV4Roaming.setNoclip) == "function" then
-					pcall(__SenaV4Roaming.setNoclip, p1017 == true)
+				if __RiuuV4Roaming and type(__RiuuV4Roaming.setNoclip) == "function" then
+					pcall(__RiuuV4Roaming.setNoclip, p1017 == true)
 				end
 			end
 			v4561 = function(p1018)
-				local __SenaV4Roaming = genv.__SenaV4Roaming
+				local __RiuuV4Roaming = genv.__RiuuV4Roaming
 
-				if __SenaV4Roaming and type(__SenaV4Roaming.setBottingMode) == "function" then
-					pcall(__SenaV4Roaming.setBottingMode, p1018 == true)
+				if __RiuuV4Roaming and type(__RiuuV4Roaming.setBottingMode) == "function" then
+					pcall(__RiuuV4Roaming.setBottingMode, p1018 == true)
 				end
 			end
 			v4562 = function(p1019)
@@ -31036,20 +31191,20 @@ do
 			end
 		end
 		local function v4720(p1045)
-			local __SenaV4SetCapFps = genv.__SenaV4SetCapFps
+			local __RiuuV4SetCapFps = genv.__RiuuV4SetCapFps
 
-			if type(__SenaV4SetCapFps) == "function" then
-				__SenaV4SetCapFps(p1045 == true and 240 or 60)
+			if type(__RiuuV4SetCapFps) == "function" then
+				__RiuuV4SetCapFps(p1045 == true and 240 or 60)
 			end
 		end
 
 		local v4722, v4723, v4724, v4725, v4726, v4727, v4728, v4729, v4730, v4731
-		local v4732, __SenaV4PlayerSteal, v4734, v4735, v4736, v4737, v4738, v4739, v4740, v4741
+		local v4732, __RiuuV4PlayerSteal, v4734, v4735, v4736, v4737, v4738, v4739, v4740, v4741
 		local v4742, t216, t217, u4745, t218
 
 		do
 			local function v4747()
-				return genv.__SenaV4MovementExtras
+				return genv.__RiuuV4MovementExtras
 			end
 
 			v4722 = function(p1046)
@@ -31072,15 +31227,15 @@ do
 			end
 
 			local function v4750(p1048)
-				genv.__SenaV4AdminBoost = p1048 == true
+				genv.__RiuuV4AdminBoost = p1048 == true
 
 				if v612 then
 					v612:setSpeed(senaV4Config.TweenSpeedMultiplier or 60)
 				end
 
-				genv.__SenaV4AdminBoostSpeedGen = (genv.__SenaV4AdminBoostSpeedGen or 0) + 1
+				genv.__RiuuV4AdminBoostSpeedGen = (genv.__RiuuV4AdminBoostSpeedGen or 0) + 1
 
-				local __SenaV4AdminBoostSpeedGen = genv.__SenaV4AdminBoostSpeedGen
+				local __RiuuV4AdminBoostSpeedGen = genv.__RiuuV4AdminBoostSpeedGen
 
 				if p1048 == true then
 					task.spawn(function()
@@ -31088,7 +31243,7 @@ do
 						local v4753
 						local v4754
 
-						while genv.__SenaV4AdminBoostSpeedGen == __SenaV4AdminBoostSpeedGen and v16() do
+						while genv.__RiuuV4AdminBoostSpeedGen == __RiuuV4AdminBoostSpeedGen and v16() do
 							local Character = LocalPlayer.Character
 							local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
 
@@ -31142,18 +31297,18 @@ do
 			v4726 = function(p1052)
 				senaV4Config.AntiHitGuard = p1052 == true
 
-				local __SenaV4AntiHitGuard = genv.__SenaV4AntiHitGuard
+				local __RiuuV4AntiHitGuard = genv.__RiuuV4AntiHitGuard
 
-				if __SenaV4AntiHitGuard then
-					__SenaV4AntiHitGuard:setEnabled(senaV4Config.AntiHitGuard)
+				if __RiuuV4AntiHitGuard then
+					__RiuuV4AntiHitGuard:setEnabled(senaV4Config.AntiHitGuard)
 				end
 			end
 			v4727 = function(p1053)
 				senaV4Config.AntiAFK = p1053 == true
-				genv.__SenaV4AntiAfkEnabled = senaV4Config.AntiAFK
+				genv.__RiuuV4AntiAfkEnabled = senaV4Config.AntiAFK
 
-				if type(genv.__SenaV4SetAntiAfkEnabled) == "function" then
-					genv.__SenaV4SetAntiAfkEnabled(senaV4Config.AntiAFK)
+				if type(genv.__RiuuV4SetAntiAfkEnabled) == "function" then
+					genv.__RiuuV4SetAntiAfkEnabled(senaV4Config.AntiAFK)
 				end
 			end
 			v4728 = function(p1054)
@@ -31180,12 +31335,12 @@ do
 			end
 
 			local function v4763()
-				local __SenaV4IdentitySetter = genv.__SenaV4IdentitySetter or type(setthreadidentity) == "function" and setthreadidentity or type(set_thread_identity) == "function" and set_thread_identity or type(setidentity) == "function" and setidentity or type(syn) == "table" and type(syn.set_thread_identity) == "function" and syn.set_thread_identity
-				local __SenaV4UICapabilityIdentity = genv.__SenaV4UICapabilityIdentity or 8
+				local __RiuuV4IdentitySetter = genv.__RiuuV4IdentitySetter or type(setthreadidentity) == "function" and setthreadidentity or type(set_thread_identity) == "function" and set_thread_identity or type(setidentity) == "function" and setidentity or type(syn) == "table" and type(syn.set_thread_identity) == "function" and syn.set_thread_identity
+				local __RiuuV4UICapabilityIdentity = genv.__RiuuV4UICapabilityIdentity or 8
 
 				local function v4766()
-					if type(__SenaV4IdentitySetter) == "function" then
-						pcall(__SenaV4IdentitySetter, __SenaV4UICapabilityIdentity)
+					if type(__RiuuV4IdentitySetter) == "function" then
+						pcall(__RiuuV4IdentitySetter, __RiuuV4UICapabilityIdentity)
 					end
 				end
 
@@ -31211,12 +31366,12 @@ do
 
 				return v4767
 			end
-			__SenaV4PlayerSteal = genv.__SenaV4PlayerSteal
+			__RiuuV4PlayerSteal = genv.__RiuuV4PlayerSteal
 			v4734 = function(p1058)
 				senaV4Config.StealPlayers = p1058 == true
 
-				if __SenaV4PlayerSteal then
-					__SenaV4PlayerSteal:setEnabled(senaV4Config.StealPlayers)
+				if __RiuuV4PlayerSteal then
+					__RiuuV4PlayerSteal:setEnabled(senaV4Config.StealPlayers)
 				end
 			end
 			v4735 = function(p1059)
@@ -31384,10 +31539,10 @@ do
 			t216 = {}
 			t217 = { "Respawn Point" }
 
-			local __SenaV4Roaming = genv.__SenaV4Roaming
+			local __RiuuV4Roaming = genv.__RiuuV4Roaming
 
-			if __SenaV4Roaming and type(__SenaV4Roaming.waypointList) == "function" then
-				local ok, result = pcall(__SenaV4Roaming.waypointList)
+			if __RiuuV4Roaming and type(__RiuuV4Roaming.waypointList) == "function" then
+				local ok, result = pcall(__RiuuV4Roaming.waypointList)
 
 				if ok and type(result) == "table" and #result > 0 then
 					t217 = result
@@ -31397,11 +31552,11 @@ do
 			u4745 = t217[1]
 			t218 = {}
 
-			local __SenaV4ScrambleRuntime = genv.__SenaV4ScrambleRuntime
+			local __RiuuV4ScrambleRuntime = genv.__RiuuV4ScrambleRuntime
 
-			if __SenaV4ScrambleRuntime and type(__SenaV4ScrambleRuntime.snapshot) == "function" then
+			if __RiuuV4ScrambleRuntime and type(__RiuuV4ScrambleRuntime.snapshot) == "function" then
 				pcall(function()
-					local v4788 = __SenaV4ScrambleRuntime.snapshot()
+					local v4788 = __RiuuV4ScrambleRuntime.snapshot()
 
 					if v4788 and type(v4788.Shop) == "table" then
 						for _, v in pairs(v4788.Shop) do
@@ -31508,14 +31663,13 @@ do
 			})
 			t216.stealMode = v4794:AddDropdown({
 				Title = "Steal Mode",
-				Content = "If you have good speed better use High Speed User, but if you are newbie, use Low Speed User",
+				Content = "Instant Teleport = blink to the egg and straight back home. High Speed User (Fly) = flies to the egg.",
 				Options = {
-					"Low Speed User",
-					"High Speed User",
+					"Instant Teleport",
 					"High Speed User (Fly)"
 				},
 				MaxVisible = 3,
-				Default = "High Speed User",
+				Default = "Instant Teleport",
 				Multi = false,
 				Callback = v4732(v4536)
 			})
@@ -31525,8 +31679,8 @@ do
 			end
 
 			t216.stealHold = v4794:AddSlider({
-				Title = "Low Speed Multiplier",
-				Content = "For Low Speed User. Higher = faster grab, lower = safer. Lower it if steals keep failing.",
+				Title = "Grab Hold Seconds",
+				Content = "For Instant Teleport: seconds to hold above the egg before grabbing. Lower = faster steal.",
 				Min = 1,
 				Max = 10,
 				Default = 5,
@@ -31677,9 +31831,9 @@ do
 				Title = "Test Webhook",
 				Content = "Sends one test embed so you can confirm the URL works.",
 				Callback = v4732(function()
-					local __SenaV4Webhook = genv.__SenaV4Webhook
+					local __RiuuV4Webhook = genv.__RiuuV4Webhook
 
-					if not __SenaV4Webhook or not __SenaV4Webhook.test() then
+					if not __RiuuV4Webhook or not __RiuuV4Webhook.test() then
 						RiuuLib:Notify({
 							Title = "Steal Webhook",
 							Content = "Enter a webhook URL first",
@@ -31898,11 +32052,11 @@ do
 				Title = "Unfavorite Everything",
 				Content = "Clears the favorite flag on every pet you own.",
 				Callback = v4732(function()
-					local __SenaV4PetBarn = genv.__SenaV4PetBarn
+					local __RiuuV4PetBarn = genv.__RiuuV4PetBarn
 					local n83 = 0
 
-					if __SenaV4PetBarn and type(__SenaV4PetBarn.unfavoriteAll) == "function" then
-						n83 = __SenaV4PetBarn.unfavoriteAll() or 0
+					if __RiuuV4PetBarn and type(__RiuuV4PetBarn.unfavoriteAll) == "function" then
+						n83 = __RiuuV4PetBarn.unfavoriteAll() or 0
 					end
 
 					RiuuLib:Notify({
@@ -31979,12 +32133,12 @@ do
 				Title = "Upgrade Base Now",
 				Content = "Buys one base tier right away.",
 				Callback = v4732(function()
-					local __SenaV4Upgrades = genv.__SenaV4Upgrades
+					local __RiuuV4Upgrades = genv.__RiuuV4Upgrades
 					local v4811 = false
 					local s18 = "Upgrades not ready"
 
-					if __SenaV4Upgrades and type(__SenaV4Upgrades.upgradeBase) == "function" then
-						v4811, s18 = __SenaV4Upgrades.upgradeBase()
+					if __RiuuV4Upgrades and type(__RiuuV4Upgrades.upgradeBase) == "function" then
+						v4811, s18 = __RiuuV4Upgrades.upgradeBase()
 					end
 
 					local v4813 = RiuuLib
@@ -32004,7 +32158,7 @@ do
 				end)
 			})
 
-			local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+			local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 			local v4818 = v4804:AddSection("Butterfly Bloom")
 			local v4819 = v4818:AddParagraph({
 				Title = "Bloom Status",
@@ -32028,7 +32182,7 @@ do
 				end)
 			})
 
-			local v4820 = __SenaV4ButterflyRuntime and __SenaV4ButterflyRuntime.modeOptions() or { "Tween to Butterfly" }
+			local v4820 = __RiuuV4ButterflyRuntime and __RiuuV4ButterflyRuntime.modeOptions() or { "Tween to Butterfly" }
 
 			t216.bloomMode = v4818:AddDropdown({
 				Title = "Catch Mode",
@@ -32037,15 +32191,15 @@ do
 				Multi = false,
 				Default = v4820[1],
 				Callback = v4732(function(p1079)
-					if __SenaV4ButterflyRuntime then
-						__SenaV4ButterflyRuntime.setMode(p1079)
+					if __RiuuV4ButterflyRuntime then
+						__RiuuV4ButterflyRuntime.setMode(p1079)
 					end
 				end)
 			})
 			t216.bloomTiers = v4818:AddDropdown({
 				Title = "Catch Tiers",
 				Content = "Only swing at these butterflies. Leave empty to catch every tier.",
-				Options = __SenaV4ButterflyRuntime and __SenaV4ButterflyRuntime.tierOptions() or {
+				Options = __RiuuV4ButterflyRuntime and __RiuuV4ButterflyRuntime.tierOptions() or {
 					"Radiant",
 					"Amethyst",
 					"Sapphire",
@@ -32054,8 +32208,8 @@ do
 				Multi = true,
 				Default = {},
 				Callback = v4732(function(p1080)
-					if __SenaV4ButterflyRuntime then
-						__SenaV4ButterflyRuntime.setTiers(v4320(p1080))
+					if __RiuuV4ButterflyRuntime then
+						__RiuuV4ButterflyRuntime.setTiers(v4320(p1080))
 					end
 				end)
 			})
@@ -32077,7 +32231,7 @@ do
 				end)
 			})
 
-			local v4821 = __SenaV4ButterflyRuntime and __SenaV4ButterflyRuntime.recipeOptions() or { "All Recipes" }
+			local v4821 = __RiuuV4ButterflyRuntime and __RiuuV4ButterflyRuntime.recipeOptions() or { "All Recipes" }
 
 			t216.bloomRecipe = v4818:AddDropdown({
 				Title = "Trade Recipe",
@@ -32086,8 +32240,8 @@ do
 				Multi = false,
 				Default = v4821[1],
 				Callback = v4732(function(p1083)
-					if __SenaV4ButterflyRuntime then
-						__SenaV4ButterflyRuntime.setRecipe(p1083)
+					if __RiuuV4ButterflyRuntime then
+						__RiuuV4ButterflyRuntime.setRecipe(p1083)
 					end
 				end)
 			})
@@ -32105,16 +32259,16 @@ do
 					Title = p1085,
 					Content = p1086,
 					Callback = v4732(function()
-						if not __SenaV4ButterflyRuntime then
+						if not __RiuuV4ButterflyRuntime then
 							return
 						end
 
 						task.spawn(function()
-							__SenaV4ButterflyRuntime.manual = true
+							__RiuuV4ButterflyRuntime.manual = true
 
 							local ok, result, result2 = pcall(p1087)
 
-							__SenaV4ButterflyRuntime.manual = false
+							__RiuuV4ButterflyRuntime.manual = false
 
 							if not ok then
 								local v4826 = result
@@ -32143,26 +32297,26 @@ do
 			end
 
 			v4822("Claim Net Now", "Claims the Butterfly Net right now.", function()
-				return __SenaV4ButterflyRuntime.claimNet()
+				return __RiuuV4ButterflyRuntime.claimNet()
 			end, function()
 				return "Butterfly Net claimed"
 			end)
 			v4822("Trade Up Now", "Runs the trade recipe once, even with Auto Trade Up off.", function()
-				return __SenaV4ButterflyRuntime.tradeUp()
+				return __RiuuV4ButterflyRuntime.tradeUp()
 			end, function(p1089)
 				return ("Traded up %d time(s)"):format(tonumber(p1089) or 0)
 			end)
 			v4822("Craft Essence Now", "Crafts Enchanted Essence right now if you hold the full recipe.", function()
-				return __SenaV4ButterflyRuntime.craft()
+				return __RiuuV4ButterflyRuntime.craft()
 			end, function(p1090)
 				return ("Crafted %d Enchanted Essence"):format(tonumber(p1090) or 0)
 			end)
 			task.spawn(function()
 				while v16() do
-					if __SenaV4ButterflyRuntime then
+					if __RiuuV4ButterflyRuntime then
 						pcall(function()
-							local snap = __SenaV4ButterflyRuntime.snap
-							local v4832 = __SenaV4ButterflyRuntime.tiers() or {}
+							local snap = __RiuuV4ButterflyRuntime.snap
+							local v4832 = __RiuuV4ButterflyRuntime.tiers() or {}
 							local v4833
 
 							if snap.active then
@@ -32190,7 +32344,7 @@ do
 								t223[#t223 + 1] = ("%s %d"):format(v4832[v] and v4832[v].name or v, snap.counts and snap.counts[v] or 0)
 							end
 
-							v4819:SetContent(("%s\n%s  ·  Essence %d  ·  Caught %d\n%s\n%s"):format(v4833, snap.net and (snap.holding and "Net equipped" or "Net owned") or "No Butterfly Net", snap.essence or 0, snap.caught or 0, table.concat(t223, "  ·  "), tostring(__SenaV4ButterflyRuntime.status or "Idle")))
+							v4819:SetContent(("%s\n%s  ·  Essence %d  ·  Caught %d\n%s\n%s"):format(v4833, snap.net and (snap.holding and "Net equipped" or "Net owned") or "No Butterfly Net", snap.essence or 0, snap.caught or 0, table.concat(t223, "  ·  "), tostring(__RiuuV4ButterflyRuntime.status or "Idle")))
 						end)
 					end
 
@@ -32251,12 +32405,12 @@ do
 				Title = "Trade-In Once",
 				Content = "Runs one sacrifice right now, even with Auto Trade-In off.",
 				Callback = v4732(function()
-					local __SenaV4ScrambleTradeIn = genv.__SenaV4ScrambleTradeIn
+					local __RiuuV4ScrambleTradeIn = genv.__RiuuV4ScrambleTradeIn
 					local v4841 = false
 					local s19 = "Trade-In not ready"
 
-					if __SenaV4ScrambleTradeIn then
-						v4841, s19 = __SenaV4ScrambleTradeIn.tradeOnce()
+					if __RiuuV4ScrambleTradeIn then
+						v4841, s19 = __RiuuV4ScrambleTradeIn.tradeOnce()
 					end
 
 					RiuuLib:Notify({
@@ -32270,12 +32424,12 @@ do
 				Title = "Use Free Reroll",
 				Content = "Spends one of today's free rerolls on a new recipe.",
 				Callback = v4732(function()
-					local __SenaV4ScrambleTradeIn = genv.__SenaV4ScrambleTradeIn
+					local __RiuuV4ScrambleTradeIn = genv.__RiuuV4ScrambleTradeIn
 					local v4844 = false
 					local s20 = "Trade-In not ready"
 
-					if __SenaV4ScrambleTradeIn then
-						v4844, s20 = __SenaV4ScrambleTradeIn.reroll()
+					if __RiuuV4ScrambleTradeIn then
+						v4844, s20 = __RiuuV4ScrambleTradeIn.reroll()
 					end
 
 					RiuuLib:Notify({
@@ -32308,15 +32462,15 @@ do
 
 			task.spawn(function()
 				while v16() do
-					local __SenaV4ScrambleTradeIn = genv.__SenaV4ScrambleTradeIn
+					local __RiuuV4ScrambleTradeIn = genv.__RiuuV4ScrambleTradeIn
 
-					if __SenaV4ScrambleTradeIn then
+					if __RiuuV4ScrambleTradeIn then
 						pcall(function()
 							v4846:SetContent(string.format([[%s  ·  %s
 Rotates in %02d:%02d  ·  Pity %d/%d  ·  Free rerolls %d  ·  Traded %d
 Recipe (%d/%d): %s
 Held: %s
-Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, math.floor(__SenaV4ScrambleTradeIn.rotation / 60), __SenaV4ScrambleTradeIn.rotation % 60, __SenaV4ScrambleTradeIn.pity, __SenaV4ScrambleTradeIn.pityMax, __SenaV4ScrambleTradeIn.free, __SenaV4ScrambleTradeIn.trades, __SenaV4ScrambleTradeIn.ready, __SenaV4ScrambleTradeIn.total, __SenaV4ScrambleTradeIn.demands, __SenaV4ScrambleTradeIn.stock, __SenaV4ScrambleTradeIn.missing))
+Missing: %s]], __RiuuV4ScrambleTradeIn.banner, __RiuuV4ScrambleTradeIn.status, math.floor(__RiuuV4ScrambleTradeIn.rotation / 60), __RiuuV4ScrambleTradeIn.rotation % 60, __RiuuV4ScrambleTradeIn.pity, __RiuuV4ScrambleTradeIn.pityMax, __RiuuV4ScrambleTradeIn.free, __RiuuV4ScrambleTradeIn.trades, __RiuuV4ScrambleTradeIn.ready, __RiuuV4ScrambleTradeIn.total, __RiuuV4ScrambleTradeIn.demands, __RiuuV4ScrambleTradeIn.stock, __RiuuV4ScrambleTradeIn.missing))
 						end)
 					end
 
@@ -32344,11 +32498,11 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 
 			task.spawn(function()
 				while v16() do
-					local __SenaV4ScrambleBoss = genv.__SenaV4ScrambleBoss
+					local __RiuuV4ScrambleBoss = genv.__RiuuV4ScrambleBoss
 
-					if __SenaV4ScrambleBoss then
+					if __RiuuV4ScrambleBoss then
 						pcall(function()
-							v4848:SetContent(string.format("%s  ·  joins %d  ·  hits %d", tostring(__SenaV4ScrambleBoss.status), __SenaV4ScrambleBoss.joins or 0, __SenaV4ScrambleBoss.hits or 0))
+							v4848:SetContent(string.format("%s  ·  joins %d  ·  hits %d", tostring(__RiuuV4ScrambleBoss.status), __RiuuV4ScrambleBoss.joins or 0, __RiuuV4ScrambleBoss.hits or 0))
 						end)
 					end
 
@@ -32554,11 +32708,11 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Teleport To Waypoint",
 				Content = "Moves you straight to the waypoint you picked.",
 				Callback = v4732(function()
-					local __SenaV4Roaming = genv.__SenaV4Roaming
+					local __RiuuV4Roaming = genv.__RiuuV4Roaming
 					local v4862 = false
 
-					if __SenaV4Roaming and type(__SenaV4Roaming.teleportWaypoint) == "function" then
-						v4862 = __SenaV4Roaming.teleportWaypoint(u4745) == true
+					if __RiuuV4Roaming and type(__RiuuV4Roaming.teleportWaypoint) == "function" then
+						v4862 = __RiuuV4Roaming.teleportWaypoint(u4745) == true
 					end
 
 					RiuuLib:Notify({
@@ -32654,11 +32808,11 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 						pcall(v612.setEnabled, v612, false)
 					end
 
-					local __SenaV4HubShutdown = genv.__SenaV4HubShutdown
+					local __RiuuV4HubShutdown = genv.__RiuuV4HubShutdown
 
-					if type(__SenaV4HubShutdown) == "function" then
+					if type(__RiuuV4HubShutdown) == "function" then
 						task.delay(0.2, function()
-							pcall(__SenaV4HubShutdown)
+							pcall(__RiuuV4HubShutdown)
 						end)
 					end
 				end)
@@ -32736,7 +32890,7 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 			else
 				v4871:AddParagraph({
 					Title = "Update required",
-					Content = "This Sena UI build has no player list yet. Rejoin to pull the latest version."
+					Content = "This Riuu UI build has no player list yet. Rejoin to pull the latest version."
 				})
 			end
 
@@ -32744,19 +32898,19 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Clear History",
 				Content = "Wipe the list above.",
 				Callback = v4732(function()
-					if __SenaV4PlayerSteal then
-						__SenaV4PlayerSteal:clearHistory()
+					if __RiuuV4PlayerSteal then
+						__RiuuV4PlayerSteal:clearHistory()
 					end
 				end)
 			})
 
-			if __SenaV4PlayerSteal and v4873 then
-				local __SenaV4IdentitySetter = genv.__SenaV4IdentitySetter
-				local __SenaV4UICapabilityIdentity = genv.__SenaV4UICapabilityIdentity or 8
+			if __RiuuV4PlayerSteal and v4873 then
+				local __RiuuV4IdentitySetter = genv.__RiuuV4IdentitySetter
+				local __RiuuV4UICapabilityIdentity = genv.__RiuuV4UICapabilityIdentity or 8
 
 				local function v4877(p1095)
-					if __SenaV4IdentitySetter then
-						pcall(__SenaV4IdentitySetter, __SenaV4UICapabilityIdentity)
+					if __RiuuV4IdentitySetter then
+						pcall(__RiuuV4IdentitySetter, __RiuuV4UICapabilityIdentity)
 					end
 
 					if not v4874 or not v4874:Alive() then
@@ -32779,15 +32933,15 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 					v4874:Update(t224)
 				end
 
-				__SenaV4PlayerSteal:onChanged(v4877)
-				v4877(__SenaV4PlayerSteal)
+				__RiuuV4PlayerSteal:onChanged(v4877)
+				v4877(__RiuuV4PlayerSteal)
 				task.spawn(function()
-					while genv.__SenaV4PlayerSteal == __SenaV4PlayerSteal do
+					while genv.__RiuuV4PlayerSteal == __RiuuV4PlayerSteal do
 						local ok, result = pcall(function()
-							local v4883 = __SenaV4PlayerSteal:listEntries()
+							local v4883 = __RiuuV4PlayerSteal:listEntries()
 
-							if __SenaV4IdentitySetter then
-								pcall(__SenaV4IdentitySetter, __SenaV4UICapabilityIdentity)
+							if __RiuuV4IdentitySetter then
+								pcall(__RiuuV4IdentitySetter, __RiuuV4UICapabilityIdentity)
 							end
 
 							if v4873:Alive() then
@@ -32796,7 +32950,7 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 						end)
 
 						if not ok then
-							warn("[Sena Steal] Player list update loop error:", result)
+							warn("[Riuu Steal] Player list update loop error:", result)
 						end
 
 						task.wait(1)
@@ -32833,7 +32987,7 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 		end
 
 		do
-			local __SenaV4Visual = genv.__SenaV4Visual
+			local __RiuuV4Visual = genv.__RiuuV4Visual
 			local v4885 = v4742:AddTab({
 				Name = "Visual",
 				Icon = "eye"
@@ -32845,23 +32999,23 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 			local v4887
 
 			local function v4888()
-				if v4887 and __SenaV4Visual then
+				if v4887 and __RiuuV4Visual then
 					pcall(function()
-						v4887:SetContent(__SenaV4Visual.status)
+						v4887:SetContent(__RiuuV4Visual.status)
 					end)
 				end
 			end
 			local function v4889(p1096)
-				if not __SenaV4Visual then
+				if not __RiuuV4Visual then
 					return
 				end
 
 				task.spawn(function()
-					__SenaV4Visual.spawn(p1096, t225[p1096])
+					__RiuuV4Visual.spawn(p1096, t225[p1096])
 					v4888()
 					RiuuLib:Notify({
 						Title = "Visual",
-						Content = __SenaV4Visual.status,
+						Content = __RiuuV4Visual.status,
 						Duration = 3
 					})
 				end)
@@ -32898,12 +33052,12 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Default = 1,
 				Increment = 0.1,
 				Callback = v4732(function(p1098)
-					if not __SenaV4Visual or __SenaV4Visual.rodScale == p1098 then
+					if not __RiuuV4Visual or __RiuuV4Visual.rodScale == p1098 then
 						return
 					end
 
-					__SenaV4Visual.rodScale = p1098
-					task.spawn(__SenaV4Visual.respawn, "rods")
+					__RiuuV4Visual.rodScale = p1098
+					task.spawn(__RiuuV4Visual.respawn, "rods")
 				end)
 			})
 			v4890:AddSubSection("Fish")
@@ -32936,12 +33090,12 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Callback = v4732(function(p1100)
 					local fishWeight = (tonumber(p1100) or 0) / 100
 
-					if not __SenaV4Visual or __SenaV4Visual.fishWeight == fishWeight then
+					if not __RiuuV4Visual or __RiuuV4Visual.fishWeight == fishWeight then
 						return
 					end
 
-					__SenaV4Visual.fishWeight = fishWeight
-					task.spawn(__SenaV4Visual.respawn, "fish")
+					__RiuuV4Visual.fishWeight = fishWeight
+					task.spawn(__RiuuV4Visual.respawn, "fish")
 				end)
 			})
 			v4890:AddSubSection("Manage")
@@ -32953,20 +33107,20 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Remove All Visual Items",
 				Content = "Takes every spawned rod and fish out of your backpack.",
 				Callback = v4732(function()
-					if __SenaV4Visual then
-						__SenaV4Visual.clear()
+					if __RiuuV4Visual then
+						__RiuuV4Visual.clear()
 					end
 
 					v4888()
 				end)
 			})
 			task.spawn(function()
-				if not __SenaV4Visual then
+				if not __RiuuV4Visual then
 					return
 				end
 
-				local rods = __SenaV4Visual.names("rods")
-				local fish = __SenaV4Visual.names("fish")
+				local rods = __RiuuV4Visual.names("rods")
+				local fish = __RiuuV4Visual.names("fish")
 
 				pcall(function()
 					v4891:Refresh(rods)
@@ -32974,14 +33128,14 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				pcall(function()
 					v4892:Refresh(fish)
 				end)
-				__SenaV4Visual.status = #rods > 0 and string.format("%d rods and %d fish available", #rods, #fish) or "Could not load the item list. Try again later."
+				__RiuuV4Visual.status = #rods > 0 and string.format("%d rods and %d fish available", #rods, #fish) or "Could not load the item list. Try again later."
 				v4888()
 			end)
 
 			local v4896 = v4885:AddSection("Steal an Egg")
 			local s21 = "Egg"
 			local n84 = 50
-			local Egg = genv.__SenaV4VisualSAE and genv.__SenaV4VisualSAE.categories("Egg") or {}
+			local Egg = genv.__RiuuV4VisualSAE and genv.__RiuuV4VisualSAE.categories("Egg") or {}
 			local u4900 = Egg[1]
 
 			v4896:AddDropdown({
@@ -33023,10 +33177,10 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Hold in Hand",
 				Content = "Spawns a model of it in your hand. Press again for more. (In-hand only - use the other button to also add it to All Items.)",
 				Callback = v4732(function()
-					local __SenaV4VisualSAE = genv.__SenaV4VisualSAE
+					local __RiuuV4VisualSAE = genv.__RiuuV4VisualSAE
 
-					if __SenaV4VisualSAE then
-						__SenaV4VisualSAE.spawn(s21, u4900, n84, true)
+					if __RiuuV4VisualSAE then
+						__RiuuV4VisualSAE.spawn(s21, u4900, n84, true)
 					end
 				end)
 			})
@@ -33034,10 +33188,10 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Add to Backpack (Kg)",
 				Content = "Drops it in All Items (eggs) or Pets with a huge Kg for the inventory flex. Press again for more.",
 				Callback = v4732(function()
-					local __SenaV4VisualSAE = genv.__SenaV4VisualSAE
+					local __RiuuV4VisualSAE = genv.__RiuuV4VisualSAE
 
-					if __SenaV4VisualSAE then
-						__SenaV4VisualSAE.spawn(s21, u4900, n84, false)
+					if __RiuuV4VisualSAE then
+						__RiuuV4VisualSAE.spawn(s21, u4900, n84, false)
 					end
 				end)
 			})
@@ -33045,10 +33199,10 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Remove Egg / Pet Visuals",
 				Content = "Takes every spawned fake egg/pet and held model out.",
 				Callback = v4732(function()
-					local __SenaV4VisualSAE = genv.__SenaV4VisualSAE
+					local __RiuuV4VisualSAE = genv.__RiuuV4VisualSAE
 
-					if __SenaV4VisualSAE then
-						__SenaV4VisualSAE.clear()
+					if __RiuuV4VisualSAE then
+						__RiuuV4VisualSAE.clear()
 					end
 				end)
 			})
@@ -33128,24 +33282,24 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				senaV4Config.ButterflyAutoCraft = p1113 == true
 			end)
 			v4904(t216.bloomTiers, function(p1114)
-				local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+				local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-				if __SenaV4ButterflyRuntime then
-					__SenaV4ButterflyRuntime.setTiers(v4320(p1114))
+				if __RiuuV4ButterflyRuntime then
+					__RiuuV4ButterflyRuntime.setTiers(v4320(p1114))
 				end
 			end)
 			v4904(t216.bloomRecipe, function(p1115)
-				local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+				local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-				if __SenaV4ButterflyRuntime then
-					__SenaV4ButterflyRuntime.setRecipe(p1115)
+				if __RiuuV4ButterflyRuntime then
+					__RiuuV4ButterflyRuntime.setRecipe(p1115)
 				end
 			end)
 			v4904(t216.bloomMode, function(p1116)
-				local __SenaV4ButterflyRuntime = genv.__SenaV4ButterflyRuntime
+				local __RiuuV4ButterflyRuntime = genv.__RiuuV4ButterflyRuntime
 
-				if __SenaV4ButterflyRuntime then
-					__SenaV4ButterflyRuntime.setMode(p1116)
+				if __RiuuV4ButterflyRuntime then
+					__RiuuV4ButterflyRuntime.setMode(p1116)
 				end
 			end)
 			v4904(t216.noclip, v4560)
@@ -33236,9 +33390,9 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 		end
 
 		do
-			genv.__SenaV4HubShutdown = function()
-				if __SenaV4PlayerSteal then
-					pcall(__SenaV4PlayerSteal.setEnabled, __SenaV4PlayerSteal, false)
+			genv.__RiuuV4HubShutdown = function()
+				if __RiuuV4PlayerSteal then
+					pcall(__RiuuV4PlayerSteal.setEnabled, __RiuuV4PlayerSteal, false)
 				end
 
 				for _, v in ipairs({
