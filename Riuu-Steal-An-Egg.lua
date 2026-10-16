@@ -1,7 +1,7 @@
 ﻿-- ==== Riuu branding & owner ====
 local RIUU_OWNER = "28cellotzy"
 local RIUU_DISCORD = "noncxvrs"
-local RIUU_SCRIPT_URL = "https://raw.githubusercontent.com/xaveriusryuuuuuuuuuuuu/riuucommunity/refs/heads/main/Riuu-Steal-An-Egg.lua" -- fill with the raw URL of this script to enable auto re-execute after teleport
+local RIUU_SCRIPT_URL = "https://raw.githubusercontent.com/xaveriusryuuuuuuuuuuuu/riuucommunity/refs/heads/main/Riuu-Steal-An-Egg.lua?token=GHSAT0AAAAAAEL7OM4ZGJJBLUL7P4OMGZFU2WSFFWA" -- fill with the raw URL of this script to enable auto re-execute after teleport
 
 local function RiuuIsOwner()
 	local lp = game:GetService("Players").LocalPlayer
