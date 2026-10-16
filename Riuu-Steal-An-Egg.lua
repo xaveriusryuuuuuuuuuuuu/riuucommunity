@@ -1234,14 +1234,302 @@ end
 		updateStatus()
 		return card
 	end
+	-- ==== Admin Panel (owner only) ====
+	local function makeAdminPanel(parent, cfg)
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); pad(card, 12, 10, 12, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 8), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg and cfg.Title or "Owner Tools"), LayoutOrder=1, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="Owner-only tools. Click a category to expand it.", LayoutOrder=2, Parent=card})
+
+		local player = Players.LocalPlayer
+
+		local function notify(content)
+			Lib:Notify({ Title = "Admin", Content = tostring(content) })
+		end
+
+		local function sendChat(text)
+			text = tostring(text or "")
+			if text:gsub("%s+", "") == "" then return end
+			task.spawn(function()
+				local sent = false
+				pcall(function()
+					local channels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
+					local general = channels and channels:FindFirstChild("RBXGeneral")
+					if general then
+						general:SendAsync(text)
+						sent = true
+					end
+				end)
+				if not sent then
+					pcall(function()
+						local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+						local say = events and events:FindFirstChild("SayMessageRequest")
+						if say then
+							say:FireServer(text, "All")
+							sent = true
+						end
+					end)
+				end
+				notify(sent and "Announcement sent to chat." or "Could not send chat message.")
+			end)
+		end
+
+		local function showBanner(text)
+			pcall(function()
+				local holder = (typeof(gethui) == "function" and gethui()) or player:FindFirstChildOfClass("PlayerGui")
+				if not holder then return end
+				for _, gui2 in ipairs(holder:GetChildren()) do
+					if gui2:IsA("ScreenGui") and gui2.Name == "RiuuBanner" then
+						gui2:Destroy()
+					end
+				end
+				local gui = Instance.new("ScreenGui")
+				gui.Name = "RiuuBanner"
+				gui.ResetOnSpawn = false
+				gui.DisplayOrder = 600
+				gui.IgnoreGuiInset = false
+				gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+				gui.Parent = holder
+				local frame = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0), Position=UDim2.new(0.5, 0, 0, 12), Size=UDim2.new(0.62, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, Parent=gui})
+				round(frame, 10); strk(frame, theme.accent, 0.8); pad(frame, 14, 10, 14, 10)
+				mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=frame})
+				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, Text="RIUU ANNOUNCEMENT", LayoutOrder=1, Parent=frame})
+				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamMedium, TextSize=14, TextColor3=theme.text, TextWrapped=true, Text=tostring(text or ""), LayoutOrder=2, Parent=frame})
+				task.delay(8, function()
+					if gui and gui.Parent then
+						gui:Destroy()
+					end
+				end)
+			end)
+		end
+
+		local function category(title, order)
+			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.headerBg, BorderSizePixel=0, LayoutOrder=order or 0, Parent=card})
+			round(row, 6)
+			mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
+			local head = mk("TextButton", {Size=UDim2.new(1, 0, 0, 26), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(title or ""), AutoButtonColor=false, Parent=row})
+			local chev = mk("TextLabel", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -8, 0.5, 0), Size=UDim2.new(0, 16, 0, 16), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.subtext, Text="›", Parent=head})
+			local body = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Visible=false, Parent=row})
+			mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=body})
+			mk("Frame", {Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BorderSizePixel=0, LayoutOrder=0, Parent=body})
+			local open = false
+			head.MouseButton1Click:Connect(function()
+				open = not open
+				body.Visible = open
+				chev.Rotation = open and 90 or 0
+				chev.TextColor3 = open and theme.accent or theme.subtext
+			end)
+			return body
+		end
+
+		local function catLabel(parent, text, order)
+			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(text or ""), LayoutOrder=order or 1, Parent=parent})
+		end
+
+		local function catInput(parent, placeholder, order)
+			local f = mk("Frame", {Size=UDim2.new(1, 0, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, LayoutOrder=order or 1, Parent=parent})
+			round(f, 6); pad(f, 8, 2, 8, 2)
+			return mk("TextBox", {Size=UDim2.new(1, 0, 1, 0), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderColor3=theme.subtext, PlaceholderText=tostring(placeholder or ""), Text="", ClearTextOnFocus=false, TextXAlignment=Enum.TextXAlignment.Left, ClipsDescendants=true, Parent=f})
+		end
+
+		local function catButton(parent, text, color, order, callback)
+			local b = mk("TextButton", {Size=UDim2.new(1, 0, 0, 28), BackgroundColor3=color or theme.accent, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=Color3.fromRGB(255, 255, 255), Text=tostring(text or ""), AutoButtonColor=false, LayoutOrder=order or 1, Parent=parent})
+			round(b, 6)
+			b.MouseButton1Click:Connect(function()
+				task.spawn(function()
+					pcall(callback)
+				end)
+			end)
+			return b
+		end
+
+		local function catButtonRow(parent, order, aText, aColor, aCb, bText, bColor, bCb)
+			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 28), BackgroundTransparency=1, LayoutOrder=order or 1, Parent=parent})
+			mk("UIListLayout", {Padding=UDim.new(0, 6), FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
+			catButton(row, aText, aColor, 1, aCb).Size = UDim2.new(0.5, -3, 1, 0)
+			catButton(row, bText, bColor, 2, bCb).Size = UDim2.new(0.5, -3, 1, 0)
+		end
+
+		do
+			local body = category("Announcement", 2)
+			catLabel(body, "Send a message to every player in this server (chat + banner).", 1)
+			local annBox = catInput(body, "Type your announcement...", 2)
+			catButton(body, "Send Announcement (Chat + Banner)", theme.accent, 3, function()
+				local text = tostring(annBox.Text or "")
+				if text:gsub("%s+", "") == "" then
+					notify("Type a message first.")
+					return
+				end
+				sendChat("[RIUU] " .. text)
+				showBanner(text)
+				annBox.Text = ""
+			end)
+			catButton(body, "Show Banner Only", Color3.fromRGB(45, 45, 55), 4, function()
+				local text = tostring(annBox.Text or "")
+				if text:gsub("%s+", "") == "" then
+					notify("Type a message first.")
+					return
+				end
+				showBanner(text)
+				annBox.Text = ""
+			end)
+		end
+
+		do
+			local body = category("Performance", 3)
+			catLabel(body, "Change the FPS cap for this session.", 1)
+			local fpsBox = catInput(body, "FPS cap (1 - 999)", 2)
+			local function applyCap(n)
+				n = math.clamp(math.floor(n), 1, 999)
+				local ge = (getgenv and getgenv() or _G)
+				local ok = false
+				if typeof(ge.__SenaV4SetCapFps) == "function" then
+					ok = pcall(ge.__SenaV4SetCapFps, n) == true
+				end
+				if not ok and typeof(setfpscap) == "function" then
+					ok = pcall(setfpscap, n)
+				end
+				notify(ok and ("FPS cap set to " .. n .. ".") or "This executor does not support FPS caps.")
+			end
+			catButtonRow(body, 3,
+				"Set FPS Cap", theme.accent, function()
+					local n = tonumber(fpsBox.Text)
+					if not n then
+						notify("Type a number first.")
+						return
+					end
+					applyCap(n)
+				end,
+				"Reset Cap (60)", Color3.fromRGB(45, 45, 55), function()
+					applyCap(60)
+				end)
+		end
+
+		do
+			local body = category("Session", 4)
+			catButtonRow(body, 1,
+				"Rejoin Server", theme.accent, function()
+					notify("Rejoining...")
+					game:GetService("TeleportService"):TeleportAsync(game.PlaceId, player)
+				end,
+				"Copy Job ID", Color3.fromRGB(45, 45, 55), function()
+					local jobId = tostring(game.JobId)
+					if jobId == "" then
+						notify("No Job ID (not in a real server).")
+						return
+					end
+					if typeof(setclipboard) == "function" then
+						setclipboard(jobId)
+						notify("Job ID copied to clipboard.")
+					else
+						notify("Job ID: " .. jobId)
+					end
+				end)
+			catButtonRow(body, 2,
+				"Copy Place ID", Color3.fromRGB(45, 45, 55), function()
+					local id = tostring(game.PlaceId)
+					if typeof(setclipboard) == "function" then
+						setclipboard(id)
+						notify("Place ID copied to clipboard.")
+					else
+						notify("Place ID: " .. id)
+					end
+				end,
+				"Copy User ID", Color3.fromRGB(45, 45, 55), function()
+					local id = tostring(player.UserId)
+					if typeof(setclipboard) == "function" then
+						setclipboard(id)
+						notify("User ID copied to clipboard.")
+					else
+						notify("User ID: " .. id)
+					end
+				end)
+		end
+
+		do
+			local body = category("Data", 5)
+			catLabel(body, "Danger zone — these wipe data saved on disk.", 1)
+			catButtonRow(body, 2,
+				"Clear UI Settings", theme.danger, function()
+					if typeof(delfile) ~= "function" then
+						notify("This executor cannot delete files.")
+						return
+					end
+					pcall(delfile, RIUU_DIR .. "/settings.json")
+					notify("UI settings cleared.")
+				end,
+				"Clear Forum Data", theme.danger, function()
+					if typeof(delfile) ~= "function" then
+						notify("This executor cannot delete files.")
+						return
+					end
+					pcall(delfile, FORUM_FILE)
+					notify("Forum data cleared.")
+				end)
+			catButton(body, "Clear All Configs", theme.danger, 3, function()
+				if typeof(listfiles) ~= "function" or typeof(delfile) ~= "function" then
+					notify("This executor cannot delete files.")
+					return
+				end
+				local removed = 0
+				pcall(function()
+					for _, f in ipairs(listfiles(CONFIG_DIR)) do
+						pcall(delfile, f)
+						removed = removed + 1
+					end
+				end)
+				notify("Cleared " .. removed .. " config file(s).")
+			end)
+		end
+
+		do
+			local body = category("UI", 6)
+			catButtonRow(body, 1,
+				"Reload Script", theme.accent, function()
+					if RIUU_SCRIPT_URL == "" then
+						notify("RIUU_SCRIPT_URL is not set.")
+						return
+					end
+					notify("Reloading script...")
+					task.wait(0.2)
+					loadstring(game:HttpGet(RIUU_SCRIPT_URL))()
+				end,
+				"Destroy UI", theme.danger, function()
+					local holder = (typeof(gethui) == "function" and gethui()) or player:FindFirstChildOfClass("PlayerGui")
+					if not holder then return end
+					for _, gui2 in ipairs(holder:GetChildren()) do
+						if gui2:IsA("ScreenGui") and (gui2.Name == "RiuuHubGui" or gui2.Name == "RiuuNotify" or gui2.Name == "RiuuBanner") then
+							gui2:Destroy()
+						end
+					end
+				end)
+		end
+
+		return card
+	end
 	-- ==== Section ====
-	local function makeSection(page, name, keyPrefix)
+	local function makeSection(page, name, keyPrefix, startCollapsed)
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=page})
 		round(card, 8); pad(card, 10, 9, 10, 9)
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
-		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(name or "Section"), Parent=card})
+		local headerBtn = mk("TextButton", {Size=UDim2.new(1, 0, 0, 20), BackgroundTransparency=1, BorderSizePixel=0, Text="", AutoButtonColor=false, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, -24, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=tostring(name or "Section"), Parent=headerBtn})
+		local chevron = mk("TextLabel", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, 0, 0.5, 0), Size=UDim2.new(0, 18, 0, 18), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=16, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Center, Text="›", Parent=headerBtn})
 		local content = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=1, Parent=card})
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=content})
+		local expanded = not startCollapsed
+		local function applySectionState()
+			content.Visible = expanded
+			chevron.Rotation = expanded and 90 or 0
+			chevron.TextColor3 = expanded and theme.accent or theme.subtext
+		end
+		headerBtn.MouseButton1Click:Connect(function()
+			expanded = not expanded
+			applySectionState()
+		end)
+		applySectionState()
 		local section = {Value=nil}
 		function section:AddSubSection(text)
 			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.upper(tostring(text or "")), LayoutOrder=500, Parent=content})
@@ -1257,7 +1545,7 @@ end
 		function section:AddLiveChat(cfg) return makeLiveChat(content, cfg) end
 		function section:AddForum(cfg) return makeForum(content, cfg) end
 		function section:AddConfigPanel(cfg) return makeConfigPanel(content, cfg) end
-		function section:AddAdminPanel(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Admin Panel", Content="Admin features are owner-only."}) end
+		function section:AddAdminPanel(cfg) return makeAdminPanel(content, cfg) end
 		function section:AddSupportCard()
 			local panel = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=content})
 			round(panel, 8); strk(panel, theme.accent, 0.5); pad(panel, 10, 10, 10, 10)
@@ -32794,6 +33082,8 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				Title = "Rules",
 				Content = "1. Do not abuse admin commands.\n2. Do not share scripts.\n3. Respect other players.",
 			})
+
+			adminTab:AddAdminPanel({ Title = "Owner Tools" })
 
 		end
 
