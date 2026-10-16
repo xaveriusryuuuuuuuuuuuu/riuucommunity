@@ -8,20 +8,25 @@ local function RiuuIsOwner()
 	return lp ~= nil and string.lower(tostring(lp.Name)) == string.lower(RIUU_OWNER)
 end
 
+-- ==== Riuu UI Library (Simple & Aesthetic) ====
 local function RiuuCreateUI()
 	local Tween = game:GetService("TweenService")
 	local UIS = game:GetService("UserInputService")
 	local HttpService = game:GetService("HttpService")
+	local Players = game:GetService("Players")
 
 	local theme = {
-		windowBg = Color3.fromRGB(20, 21, 30),
-		headerBg = Color3.fromRGB(25, 26, 38),
-		panelBg = Color3.fromRGB(30, 31, 42),
-		accent = Color3.fromRGB(90, 170, 255),
-		text = Color3.fromRGB(235, 235, 240),
-		subtext = Color3.fromRGB(160, 165, 175),
-		stroke = Color3.fromRGB(60, 62, 75),
-		danger = Color3.fromRGB(220, 60, 60),
+		windowBg   = Color3.fromRGB(18, 18, 22),
+		headerBg   = Color3.fromRGB(22, 22, 27),
+		panelBg    = Color3.fromRGB(25, 25, 30),
+		accent     = Color3.fromRGB(88, 101, 242),
+		accentDark = Color3.fromRGB(70, 80, 200),
+		text       = Color3.fromRGB(235, 235, 240),
+		subtext    = Color3.fromRGB(160, 165, 175),
+		stroke     = Color3.fromRGB(40, 40, 48),
+		success    = Color3.fromRGB(60, 200, 120),
+		danger     = Color3.fromRGB(220, 60, 60),
+		warn       = Color3.fromRGB(240, 180, 60),
 	}
 
 	local RIUU_DIR = "RiuuHub"
@@ -86,158 +91,68 @@ local function RiuuCreateUI()
 			p.Parent = inst
 		end)
 	end
-	local function hoverTween(inst, speed)
-		speed = speed or 14
+	local function hoverTween(inst)
 		pcall(function()
+			local orig = inst.BackgroundColor3 or theme.panelBg
 			inst.MouseEnter:Connect(function()
-				Tween:Create(inst, TweenInfo.new(0.12), {BackgroundTransparency = (inst.BackgroundTransparency or 0) + 0.08}):Play()
+				Tween:Create(inst, TweenInfo.new(0.12), {BackgroundColor3 = theme.accentDark}):Play()
 			end)
 			inst.MouseLeave:Connect(function()
-				Tween:Create(inst, TweenInfo.new(0.12), {BackgroundTransparency = inst.BackgroundTransparency or 0}):Play()
+				Tween:Create(inst, TweenInfo.new(0.12), {BackgroundColor3 = orig}):Play()
 			end)
 		end)
 	end
-	local function elevate() end
 
-	local notifyGui, notifyHolder
-	local notifySeq = 0
+	-- ==== Notify ====
+	local notifyGui, notifyHolder, notifySeq
 	local function ensureNotify()
 		if notifyGui then return end
-		notifyGui = Instance.new("ScreenGui")
-		notifyGui.Name = "RiuuNotify"
-		notifyGui.ResetOnSpawn = false
-		notifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-		notifyGui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
-		notifyHolder = Instance.new("Frame")
-		notifyHolder.Size = UDim2.new(0, 260, 1, 0)
-		notifyHolder.Position = UDim2.new(1, -270, 0, 10)
-		notifyHolder.BackgroundTransparency = 1
-		notifyHolder.Parent = notifyGui
-		local ul = Instance.new("UIListLayout")
-		ul.Padding = UDim.new(0, 8)
-		ul.HorizontalAlignment = Enum.HorizontalAlignment.Right
-		ul.VerticalAlignment = Enum.VerticalAlignment.Top
-		ul.Parent = notifyHolder
+		notifyGui = mk("ScreenGui", {Name="RiuuNotify", ResetOnSpawn=false, ZIndexBehavior=Enum.ZIndexBehavior.Sibling}, (gethui and gethui()) or Players.LocalPlayer:FindFirstChildOfClass("PlayerGui"))
+		notifyHolder = mk("Frame", {Size=UDim2.new(0, 280, 1, 0), Position=UDim2.new(1, -290, 0, 10), BackgroundTransparency=1, Parent=notifyGui})
+		mk("UIListLayout", {Padding=UDim.new(0, 8), HorizontalAlignment=Enum.HorizontalAlignment.Right, VerticalAlignment=Enum.VerticalAlignment.Top, Parent=notifyHolder})
+		notifySeq = 0
 	end
 	function Lib:Notify(cfg)
+		cfg = cfg or {}
 		if type(cfg) ~= "table" then return end
 		pcall(function()
 			ensureNotify()
 			notifySeq = notifySeq + 1
 			local dur = tonumber(cfg.Duration) or 3.5
-			local card = Instance.new("Frame")
-			card.Size = UDim2.new(1, 0, 0, 0)
-			card.AutomaticSize = Enum.AutomaticSize.Y
-			card.BackgroundColor3 = theme.panelBg
-			card.BorderSizePixel = 0
-			card.LayoutOrder = -notifySeq
-			card.Parent = notifyHolder
-			round(card, 8)
-			strk(card, theme.accent, 0.5)
-			pad(card, 10, 10, 10, 10)
-			local title = Instance.new("TextLabel")
-			title.Size = UDim2.new(1, 0, 0, 0)
-			title.AutomaticSize = Enum.AutomaticSize.Y
-			title.BackgroundTransparency = 1
-			title.Font = Enum.Font.GothamBold
-			title.TextSize = 13
-			title.TextColor3 = theme.accent
-			title.Text = tostring(cfg.Title or "Riuu")
-			title.TextWrapped = true
-			title.Parent = card
-			local body = Instance.new("TextLabel")
-			body.Size = UDim2.new(1, 0, 0, 0)
-			body.AutomaticSize = Enum.AutomaticSize.Y
-			body.BackgroundTransparency = 1
-			body.Font = Enum.Font.Gotham
-			body.TextSize = 12
-			body.TextColor3 = theme.text
-			body.Text = tostring(cfg.Content or "")
-			body.Position = UDim2.new(0, 0, 0, 18)
-			body.TextWrapped = true
-			body.Parent = card
-			task.delay(dur, function() pcall(function() card:Destroy() end) end)
-		end)
-	end
-
+			local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, LayoutOrder=-notifySeq, Parent=notifyHolder})
+		round(card, 8); strk(card, theme.accent, 0.5); pad(card, 12, 10, 12, 10)
+		local title = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Riuu"), Parent=card})
+		local body = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content or ""), Position=UDim2.new(0, 0, 0, 18), Parent=card})
+		task.delay(dur, function() pcall(function() card:Destroy() end) end)
+    end)
+end
+	-- ==== Controls ====
 	local function makeToggle(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "toggle")
 		local saved = cfgGet(key, nil)
 		local value = (saved ~= nil) and (saved == true) or (cfg.Default == true)
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 8)
-		strk(card, theme.stroke, 0.55)
-		pad(card, 8, 10, 8, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, -60, 0, 0)
-		lbl.AutomaticSize = Enum.AutomaticSize.Y
-		lbl.BackgroundTransparency = 1
-		lbl.Font = Enum.Font.GothamSemibold
-		lbl.TextSize = 13
-		lbl.TextColor3 = theme.text
-		lbl.TextXAlignment = Enum.TextXAlignment.Left
-		lbl.TextWrapped = true
-		lbl.Text = tostring(cfg.Title or "Toggle")
-		lbl.Parent = card
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		local lbl = mk("TextLabel", {Size=UDim2.new(1, -50, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Toggle"), Parent=card})
 		if cfg.Content then
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, -60, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.Gotham
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.TextWrapped = true
-			sub.Text = tostring(cfg.Content)
-			sub.LayoutOrder = 1
-			sub.Parent = card
+			mk("TextLabel", {Size=UDim2.new(1, -50, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
 		end
-		local switch = Instance.new("TextButton")
-		switch.AnchorPoint = Vector2.new(1, 0)
-		switch.Position = UDim2.new(1, 0, 0, 7)
-		switch.Size = UDim2.new(0, 40, 0, 22)
-		switch.BackgroundColor3 = value and theme.accent or Color3.fromRGB(52, 54, 70)
-		switch.BorderSizePixel = 0
-		switch.Text = ""
-		switch.AutoButtonColor = false
-		switch.ZIndex = 2
-		switch.Parent = card
+		local switch = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, 0, 0, 7), Size=UDim2.new(0, 40, 0, 22), BackgroundColor3=value and theme.accent or Color3.fromRGB(45, 45, 55), BorderSizePixel=0, Text="", AutoButtonColor=false, ZIndex=2, Parent=card})
 		round(switch, 11)
-		local knob = Instance.new("Frame")
-		knob.AnchorPoint = Vector2.new(0, 0.5)
-		knob.Position = UDim2.new(0, value and 21 or 3, 0.5, 0)
-		knob.Size = UDim2.new(0, 16, 0, 16)
-		knob.BackgroundColor3 = theme.text
-		knob.BorderSizePixel = 0
-		knob.ZIndex = 3
-		knob.Parent = switch
+		local knob = mk("Frame", {AnchorPoint=Vector2.new(0, 0.5), Position=UDim2.new(0, value and 21 or 3, 0.5, 0), Size=UDim2.new(0, 16, 0, 16), BackgroundColor3=theme.text, BorderSizePixel=0, ZIndex=3, Parent=switch})
 		round(knob, 8)
-		local ctrl = {Value = value}
+		local ctrl = {Value=value}
 		function ctrl:SetValue(v, fire)
-			value = v == true
-			ctrl.Value = value
-			Tween:Create(switch, TweenInfo.new(0.14), {BackgroundColor3 = value and theme.accent or Color3.fromRGB(52, 54, 70)}):Play()
+			value = v == true; ctrl.Value = value
+			Tween:Create(switch, TweenInfo.new(0.14), {BackgroundColor3 = value and theme.accent or Color3.fromRGB(45, 45, 55)}):Play()
 			Tween:Create(knob, TweenInfo.new(0.14), {Position = UDim2.new(0, value and 21 or 3, 0.5, 0)}):Play()
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
-		switch.MouseButton1Click:Connect(function()
-			ctrl:SetValue(not value, true)
-			cfgSet(key, value)
-		end)
+		switch.MouseButton1Click:Connect(function() ctrl:SetValue(not value, true); cfgSet(key, value) end)
 		return ctrl
 	end
-
 	local function makeSlider(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "slider")
@@ -247,70 +162,27 @@ local function RiuuCreateUI()
 		local maxv = tonumber(cfg.Max) or 100
 		local value = (type(saved) == "number") and saved or default
 		value = math.clamp(value, minv, maxv)
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 8)
-		strk(card, theme.stroke, 0.55)
-		pad(card, 8, 10, 8, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, -50, 0, 0)
-		lbl.AutomaticSize = Enum.AutomaticSize.Y
-		lbl.BackgroundTransparency = 1
-		lbl.Font = Enum.Font.GothamSemibold
-		lbl.TextSize = 13
-		lbl.TextColor3 = theme.text
-		lbl.TextXAlignment = Enum.TextXAlignment.Left
-		lbl.TextWrapped = true
-		lbl.Text = tostring(cfg.Title or "Slider")
-		lbl.Parent = card
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, -40, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Slider"), Parent=card})
 		if cfg.Content then
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, -50, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.Gotham
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.TextWrapped = true
-			sub.Text = tostring(cfg.Content)
-			sub.LayoutOrder = 1
-			sub.Parent = card
+			mk("TextLabel", {Size=UDim2.new(1, -40, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
 		end
-		local bar = Instance.new("Frame")
-		bar.Size = UDim2.new(1, -10, 0, 10)
-		bar.Position = UDim2.new(0, 5, 0, 26)
-		bar.BackgroundColor3 = Color3.fromRGB(52, 54, 70)
-		bar.BorderSizePixel = 0
-		bar.Parent = card
-		round(bar, 5)
-		local fill = Instance.new("Frame")
-		fill.Size = UDim2.new((value - minv) / math.max(maxv - minv, 1), 0, 1, 0)
-		fill.BackgroundColor3 = theme.accent
-		fill.BorderSizePixel = 0
-		fill.Parent = bar
-		round(fill, 5)
-		local ctrl = {Value = value}
+		local bar = mk("Frame", {Size=UDim2.new(1, -10, 0, 8), Position=UDim2.new(0, 5, 0, 24), BackgroundColor3=Color3.fromRGB(45, 45, 55), BorderSizePixel=0, Parent=card})
+		round(bar, 4)
+		local fill = mk("Frame", {Size=UDim2.new((value - minv) / math.max(maxv - minv, 1), 0, 1, 0), BackgroundColor3=theme.accent, BorderSizePixel=0, Parent=bar})
+		round(fill, 4)
+		local valLbl = mk("TextLabel", {Size=UDim2.new(0, 40, 0, 14), Position=UDim2.new(1, -42, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, Text=tostring(math.floor(value)), Parent=card})
+		local ctrl = {Value=value}
 		function ctrl:SetValue(v, fire)
-			value = math.clamp(tonumber(v) or value, minv, maxv)
-			ctrl.Value = value
+			value = math.clamp(tonumber(v) or value, minv, maxv); ctrl.Value = value
 			fill.Size = UDim2.new((value - minv) / math.max(maxv - minv, 1), 0, 1, 0)
+			valLbl.Text = tostring(math.floor(value))
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
 		local dragging = false
-		bar.InputBegan:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = true
-			end
-		end)
+		bar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true end end)
 		UIS.InputChanged:Connect(function(input)
 			if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 				local rel = (input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X
@@ -318,159 +190,60 @@ local function RiuuCreateUI()
 				value = minv + rel * (maxv - minv)
 				ctrl.Value = value
 				fill.Size = UDim2.new(rel, 0, 1, 0)
+				valLbl.Text = tostring(math.floor(value))
 				if type(cfg.Callback) == "function" then cfg.Callback(value) end
 			end
 		end)
-		UIS.InputEnded:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = false
-				cfgSet(key, value)
-			end
-		end)
+		UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false; cfgSet(key, value) end end)
 		return ctrl
 	end
-
 	local function makeInput(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "input")
 		local saved = cfgGet(key, nil)
 		local value = type(saved) == "string" and saved or (cfg.Default or "")
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 8)
-		strk(card, theme.stroke, 0.55)
-		pad(card, 8, 10, 8, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, 0, 0, 0)
-		lbl.AutomaticSize = Enum.AutomaticSize.Y
-		lbl.BackgroundTransparency = 1
-		lbl.Font = Enum.Font.GothamSemibold
-		lbl.TextSize = 13
-		lbl.TextColor3 = theme.text
-		lbl.TextXAlignment = Enum.TextXAlignment.Left
-		lbl.TextWrapped = true
-		lbl.Text = tostring(cfg.Title or "Input")
-		lbl.Parent = card
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Input"), Parent=card})
 		if cfg.Content then
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, 0, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.Gotham
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.TextWrapped = true
-			sub.Text = tostring(cfg.Content)
-			sub.LayoutOrder = 1
-			sub.Parent = card
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
 		end
-		local box = Instance.new("TextBox")
-		box.Size = UDim2.new(1, -10, 0, 26)
-		box.Position = UDim2.new(0, 5, 0, 22)
-		box.BackgroundColor3 = Color3.fromRGB(15, 16, 24)
-		box.BorderSizePixel = 0
-		box.Font = Enum.Font.Gotham
-		box.TextSize = 12
-		box.TextColor3 = theme.text
-		box.Text = value
-		box.PlaceholderText = tostring(cfg.Placeholder or "")
-		box.ClearTextOnFocus = false
-		box.Parent = card
+		local box = mk("TextBox", {Size=UDim2.new(1, -10, 0, 26), Position=UDim2.new(0, 5, 0, 22), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, Text=value, PlaceholderText=tostring(cfg.Placeholder or ""), ClearTextOnFocus=false, Parent=card})
 		round(box, 6)
 		box.FocusLost:Connect(function()
-			value = box.Text
-			cfgSet(key, value)
+			value = box.Text; cfgSet(key, value)
 			if type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end)
-		local ctrl = {Value = value}
+		local ctrl = {Value=value}
 		function ctrl:SetValue(v, fire)
-			value = tostring(v or "")
-			box.Text = value
-			cfgSet(key, value)
+			value = tostring(v or ""); box.Text = value; cfgSet(key, value)
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
 		return ctrl
 	end
+
 	local function makeButton(parent, cfg)
 		cfg = cfg or {}
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 8)
-		strk(card, theme.stroke, 0.55)
-		pad(card, 8, 10, 8, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, 0, 0, 30)
-		btn.BackgroundColor3 = theme.accent
-		btn.BorderSizePixel = 0
-		btn.Font = Enum.Font.GothamBold
-		btn.TextSize = 13
-		btn.TextColor3 = theme.text
-		btn.Text = tostring(cfg.Title or "Button")
-		btn.AutoButtonColor = false
-		btn.Parent = card
-		round(btn, 8)
-		hoverTween(btn)
-		btn.MouseButton1Click:Connect(function()
-			if type(cfg.Callback) == "function" then cfg.Callback() end
-		end)
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		local btn = mk("TextButton", {Size=UDim2.new(1, 0, 0, 32), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.text, Text=tostring(cfg.Title or "Button"), AutoButtonColor=false, Parent=card})
+		round(btn, 8); hoverTween(btn)
+		btn.MouseButton1Click:Connect(function() if type(cfg.Callback) == "function" then cfg.Callback() end end)
 		if cfg.Content then
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, 0, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.Gotham
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.TextWrapped = true
-			sub.Text = tostring(cfg.Content)
-			sub.LayoutOrder = 2
-			sub.Parent = card
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=2, Parent=card})
 		end
-		return {Frame = card}
-	end
-	local function makeParagraph(parent, cfg)
-		cfg = cfg or {}
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundTransparency = 1
-		card.Parent = parent
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, 0, 0, 0)
-		lbl.AutomaticSize = Enum.AutomaticSize.Y
-		lbl.BackgroundTransparency = 1
-		lbl.Font = Enum.Font.Gotham
-		lbl.TextSize = 12
-		lbl.TextColor3 = theme.subtext
-		lbl.TextXAlignment = Enum.TextXAlignment.Left
-		lbl.TextWrapped = true
-		lbl.Text = tostring(cfg.Text or cfg.Title or "")
-		lbl.Parent = card
-		return card
+		return {Frame=card}
 	end
 
+	local function makeParagraph(parent, cfg)
+		cfg = cfg or {}
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Parent=parent})
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Text or cfg.Title or ""), Parent=card})
+		return card
+	end
 	local function makeDropdown(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "dropdown")
@@ -481,119 +254,36 @@ local function RiuuCreateUI()
 		local value
 		if multi then
 			value = {}
-			if type(saved) == "table" then
-				for _, v in ipairs(saved) do value[#value + 1] = v end
-			elseif type(cfg.Default) == "table" then
-				for _, v in ipairs(cfg.Default) do value[#value + 1] = v end
-			end
+			if type(saved) == "table" then for _, v in ipairs(saved) do value[#value+1] = v end
+			elseif type(cfg.Default) == "table" then for _, v in ipairs(cfg.Default) do value[#value+1] = v end end
 		else
 			value = (type(saved) == "string") and saved or (type(cfg.Default) == "string" and cfg.Default or "")
 		end
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 8)
-		strk(card, theme.stroke, 0.55)
-		pad(card, 8, 10, 8, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 4)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local lbl = Instance.new("TextLabel")
-		lbl.Size = UDim2.new(1, 0, 0, 0)
-		lbl.AutomaticSize = Enum.AutomaticSize.Y
-		lbl.BackgroundTransparency = 1
-		lbl.Font = Enum.Font.GothamSemibold
-		lbl.TextSize = 13
-		lbl.TextColor3 = theme.text
-		lbl.TextXAlignment = Enum.TextXAlignment.Left
-		lbl.TextWrapped = true
-		lbl.Text = tostring(cfg.Title or "Dropdown")
-		lbl.Parent = card
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Dropdown"), Parent=card})
 		if cfg.Content then
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, 0, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.Gotham
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.TextWrapped = true
-			sub.Text = tostring(cfg.Content)
-			sub.LayoutOrder = 1
-			sub.Parent = card
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
 		end
-		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(1, -10, 0, 26)
-		btn.Position = UDim2.new(0, 5, 0, 22)
-		btn.BackgroundColor3 = Color3.fromRGB(15, 16, 24)
-		btn.BorderSizePixel = 0
-		btn.Font = Enum.Font.Gotham
-		btn.TextSize = 12
-		btn.TextColor3 = theme.text
-		btn.Text = multi and (table.concat(value, ", ") or "") or value
-		btn.AutoButtonColor = false
-		btn.TextTruncate = Enum.TextTruncate.AtEnd
-		btn.Parent = card
+		local btn = mk("TextButton", {Size=UDim2.new(1, -10, 0, 26), Position=UDim2.new(0, 5, 0, 22), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, Text=multi and (table.concat(value, ", ") or "") or value, AutoButtonColor=false, TextTruncate=Enum.TextTruncate.AtEnd, Parent=card})
 		round(btn, 6)
-		local listFrame = Instance.new("Frame")
-		listFrame.Size = UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 26 + 6)
-		listFrame.Position = UDim2.new(0, 5, 0, 54)
-		listFrame.BackgroundColor3 = Color3.fromRGB(15, 16, 24)
-		listFrame.BorderSizePixel = 0
-		listFrame.Visible = false
-		listFrame.ClipsDescendants = true
-		listFrame.Parent = card
-		round(listFrame, 6)
-		strk(listFrame, theme.stroke, 0.5)
-		local scroll = Instance.new("ScrollingFrame")
-		scroll.Size = UDim2.new(1, -6, 1, -6)
-		scroll.Position = UDim2.new(0, 3, 0, 3)
-		scroll.BackgroundTransparency = 1
-		scroll.BorderSizePixel = 0
-		scroll.ScrollBarThickness = 3
-		scroll.ScrollBarImageColor3 = theme.accent
-		scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-		scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		scroll.Parent = listFrame
-		local sll = Instance.new("UIListLayout")
-		sll.Padding = UDim.new(0, 2)
-		sll.SortOrder = Enum.SortOrder.LayoutOrder
-		sll.Parent = scroll
+		local listFrame = mk("Frame", {Size=UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6), Position=UDim2.new(0, 5, 0, 54), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Visible=false, ClipsDescendants=true, Parent=card})
+		round(listFrame, 6); strk(listFrame, theme.stroke, 0.5)
+		local scroll = mk("ScrollingFrame", {Size=UDim2.new(1, -6, 1, -6), Position=UDim2.new(0, 3, 0, 3), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, Parent=listFrame})
+		mk("UIListLayout", {Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=scroll})
 		local open = false
 		local function rebuild()
-			for _, c in ipairs(scroll:GetChildren()) do
-				if c:IsA("TextButton") then c:Destroy() end
-			end
+			for _, c in ipairs(scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
 			for _, opt in ipairs(options) do
-				local ob = Instance.new("TextButton")
-				ob.Size = UDim2.new(1, 0, 0, 24)
-				ob.BackgroundTransparency = 1
-				ob.Font = Enum.Font.Gotham
-				ob.TextSize = 12
-				ob.TextColor3 = theme.subtext
-				ob.TextXAlignment = Enum.TextXAlignment.Left
-				ob.Text = tostring(opt)
-				ob.Parent = scroll
+				local ob = mk("TextButton", {Size=UDim2.new(1, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(opt), Parent=scroll})
 				ob.MouseButton1Click:Connect(function()
 					if multi then
 						local found = false
-						for i, v in ipairs(value) do
-							if v == opt then
-								table.remove(value, i)
-								found = true
-								break
-							end
-						end
-						if not found then value[#value + 1] = opt end
+						for i, v in ipairs(value) do if v == opt then table.remove(value, i); found = true; break end end
+						if not found then value[#value+1] = opt end
 					else
-						value = opt
-						open = false
-						listFrame.Visible = false
+						value = opt; open = false; listFrame.Visible = false
 					end
 					btn.Text = multi and (table.concat(value, ", ") or "") or value
 					cfgSet(key, value)
@@ -601,525 +291,136 @@ local function RiuuCreateUI()
 				end)
 			end
 		end
-		btn.MouseButton1Click:Connect(function()
-			open = not open
-			listFrame.Visible = open
-			if open then rebuild() end
-		end)
-		local ctrl = {Value = value}
+		btn.MouseButton1Click:Connect(function() open = not open; listFrame.Visible = open; if open then rebuild() end end)
+		local ctrl = {Value=value}
 		function ctrl:SetValue(v, fire)
-			if multi then
-				value = type(v) == "table" and v or {}
-			else
-				value = tostring(v or "")
-			end
+			if multi then value = type(v) == "table" and v or {} else value = tostring(v or "") end
 			btn.Text = multi and (table.concat(value, ", ") or "") or value
 			cfgSet(key, value)
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
-		function ctrl:Refresh()
-			rebuild()
-		end
-		function ctrl:SetOptions(opts)
-			options = type(opts) == "table" and opts or {}
-			rebuild()
-		end
+		function ctrl:Refresh() rebuild() end
+		function ctrl:SetOptions(opts) options = type(opts) == "table" and opts or {}; rebuild() end
 		return ctrl
 	end
-
 	local function makeActionList(parent, cfg)
 		cfg = cfg or {}
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.panelBg
-		card.BorderSizePixel = 0
-		card.Parent = parent
-		round(card, 10)
-		strk(card, theme.stroke, 0.5)
-		pad(card, 10, 10, 10, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 6)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local title = Instance.new("TextLabel")
-		title.Size = UDim2.new(1, 0, 0, 0)
-		title.AutomaticSize = Enum.AutomaticSize.Y
-		title.BackgroundTransparency = 1
-		title.Font = Enum.Font.GothamBold
-		title.TextSize = 14
-		title.TextColor3 = theme.accent
-		title.TextXAlignment = Enum.TextXAlignment.Left
-		title.TextWrapped = true
-		title.Text = tostring(cfg.Title or "Action List")
-		title.Parent = card
-		local rowsContainer = Instance.new("Frame")
-		rowsContainer.Size = UDim2.new(1, 0, 0, 0)
-		rowsContainer.AutomaticSize = Enum.AutomaticSize.Y
-		rowsContainer.BackgroundTransparency = 1
-		rowsContainer.LayoutOrder = 1
-		rowsContainer.Parent = card
-		local rll = Instance.new("UIListLayout")
-		rll.Padding = UDim.new(0, 4)
-		rll.SortOrder = Enum.SortOrder.LayoutOrder
-		rll.Parent = rowsContainer
-		local emptyLbl = Instance.new("TextLabel")
-		emptyLbl.Size = UDim2.new(1, 0, 0, 18)
-		emptyLbl.BackgroundTransparency = 1
-		emptyLbl.Font = Enum.Font.Gotham
-		emptyLbl.TextSize = 12
-		emptyLbl.TextColor3 = theme.subtext
-		emptyLbl.TextXAlignment = Enum.TextXAlignment.Left
-		emptyLbl.Text = "(no entries)"
-		emptyLbl.Visible = false
-		emptyLbl.Parent = rowsContainer
-		local buttonColors = {
-			accent = theme.accent,
-			success = Color3.fromRGB(60, 200, 120),
-			danger = theme.danger,
-			warn = Color3.fromRGB(240, 180, 60),
-		}
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Action List"), Parent=card})
+		local rowsContainer = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=1, Parent=card})
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=rowsContainer})
+		local emptyLbl = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="(no entries)", Visible=false, Parent=rowsContainer})
+		local buttonColors = {accent=theme.accent, success=Color3.fromRGB(60, 200, 120), danger=theme.danger, warn=Color3.fromRGB(240, 180, 60)}
 		local handle = {}
 		function handle:Update(list)
-			for _, c in ipairs(rowsContainer:GetChildren()) do
-				if c:IsA("Frame") and c ~= emptyLbl then c:Destroy() end
-			end
-			if type(list) ~= "table" or #list == 0 then
-				emptyLbl.Visible = true
-				return
-			end
+			for _, c in ipairs(rowsContainer:GetChildren()) do if c:IsA("Frame") and c ~= emptyLbl then c:Destroy() end end
+			if type(list) ~= "table" or #list == 0 then emptyLbl.Visible = true; return end
 			emptyLbl.Visible = false
 			for _, row in ipairs(list) do
 				if type(row) ~= "table" then continue end
-				local rowFrame = Instance.new("Frame")
-				rowFrame.Size = UDim2.new(1, 0, 0, 0)
-				rowFrame.AutomaticSize = Enum.AutomaticSize.Y
-				rowFrame.BackgroundColor3 = theme.windowBg
-				rowFrame.BorderSizePixel = 0
-				rowFrame.LayoutOrder = (row.LayoutOrder or 0)
-				rowFrame.Parent = rowsContainer
-				round(rowFrame, 8)
-				strk(rowFrame, theme.stroke, 0.4)
-				pad(rowFrame, 8, 6, 8, 6)
-				local rll2 = Instance.new("UIListLayout")
-				rll2.Padding = UDim.new(0, 2)
-				rll2.SortOrder = Enum.SortOrder.LayoutOrder
-				rll2.Parent = rowFrame
-				local nameLbl = Instance.new("TextLabel")
-				nameLbl.Size = UDim2.new(1, -80, 0, 0)
-				nameLbl.AutomaticSize = Enum.AutomaticSize.Y
-				nameLbl.BackgroundTransparency = 1
-				nameLbl.Font = Enum.Font.GothamBold
-				nameLbl.TextSize = 12
-				nameLbl.TextColor3 = theme.text
-				nameLbl.TextXAlignment = Enum.TextXAlignment.Left
-				nameLbl.TextWrapped = true
-				nameLbl.Text = tostring(row.name or "")
-				nameLbl.Parent = rowFrame
+				local rowFrame = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.windowBg, BorderSizePixel=0, LayoutOrder=(row.LayoutOrder or 0), Parent=rowsContainer})
+				round(rowFrame, 6); strk(rowFrame, theme.stroke, 0.4); pad(rowFrame, 8, 6, 8, 6)
+				mk("UIListLayout", {Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=rowFrame})
+				mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.name or ""), Parent=rowFrame})
 				if row.sub then
-					local subLbl = Instance.new("TextLabel")
-					subLbl.Size = UDim2.new(1, -80, 0, 0)
-					subLbl.AutomaticSize = Enum.AutomaticSize.Y
-					subLbl.BackgroundTransparency = 1
-					subLbl.Font = Enum.Font.Gotham
-					subLbl.TextSize = 11
-					subLbl.TextColor3 = theme.subtext
-					subLbl.TextXAlignment = Enum.TextXAlignment.Left
-					subLbl.TextWrapped = true
-					subLbl.Text = tostring(row.sub)
-					subLbl.LayoutOrder = 1
-					subLbl.Parent = rowFrame
+					mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.sub), LayoutOrder=1, Parent=rowFrame})
 				end
-				local statusLbl = Instance.new("TextLabel")
-				statusLbl.Size = UDim2.new(0, 120, 0, 16)
-				statusLbl.BackgroundTransparency = 1
-				statusLbl.Font = Enum.Font.Gotham
-				statusLbl.TextSize = 11
-				statusLbl.TextColor3 = theme.accent
-				statusLbl.TextXAlignment = Enum.TextXAlignment.Right
-				statusLbl.TextWrapped = true
-				statusLbl.Text = tostring(row.status or "")
-				statusLbl.Parent = rowFrame
+				mk("TextLabel", {Size=UDim2.new(0, 120, 0, 16), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.status or ""), Parent=rowFrame})
 				if row.statusSub then
-					local statusSubLbl = Instance.new("TextLabel")
-					statusSubLbl.Size = UDim2.new(0, 120, 0, 14)
-					statusSubLbl.BackgroundTransparency = 1
-					statusSubLbl.Font = Enum.Font.Gotham
-					statusSubLbl.TextSize = 10
-					statusSubLbl.TextColor3 = theme.subtext
-					statusSubLbl.TextXAlignment = Enum.TextXAlignment.Right
-					statusSubLbl.TextWrapped = true
-					statusSubLbl.Text = tostring(row.statusSub)
-					statusSubLbl.LayoutOrder = 3
-					statusSubLbl.Parent = rowFrame
+					mk("TextLabel", {Size=UDim2.new(0, 120, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.statusSub), LayoutOrder=3, Parent=rowFrame})
 				end
 				if row.button then
 					local bColor = buttonColors[tostring(row.buttonColor or "accent")] or theme.accent
-					local act = Instance.new("TextButton")
-					act.AnchorPoint = Vector2.new(1, 0.5)
-					act.Position = UDim2.new(1, 0, 0.5, 0)
-					act.Size = UDim2.new(0, tonumber(cfg.ButtonWidth) or 76, 0, 26)
-					act.BackgroundColor3 = bColor
-					act.BorderSizePixel = 0
-					act.Font = Enum.Font.GothamBold
-					act.TextSize = 11
-					act.TextColor3 = theme.text
-					act.AutoButtonColor = false
-					act.Text = tostring(row.button)
-					act.Parent = rowFrame
+					local act = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, 0, 0.5, 0), Size=UDim2.new(0, tonumber(cfg.ButtonWidth) or 76, 0, 24), BackgroundColor3=bColor, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, Text=tostring(row.button), AutoButtonColor=false, Parent=rowFrame})
 					round(act, 6)
 					local function setBtn(text, colorKey)
-						act.Text = tostring(text or act.Text)
-						act.BackgroundColor3 = buttonColors[tostring(colorKey or "accent")] or theme.accent
+						act.Text = tostring(text or act.Text); act.BackgroundColor3 = buttonColors[tostring(colorKey or "accent")] or theme.accent
 					end
-					act.MouseButton1Click:Connect(function()
-						if type(row.onClick) == "function" then pcall(row.onClick, row, setBtn) end
-					end)
+					act.MouseButton1Click:Connect(function() if type(row.onClick) == "function" then pcall(row.onClick, row, setBtn) end end)
 				end
 			end
 			emptyLbl.Visible = true
 		end
 		return handle
 	end
-
+	-- ==== Section ====
 	local function makeSection(page, name, keyPrefix)
-		local card = Instance.new("Frame")
-		card.Size = UDim2.new(1, 0, 0, 0)
-		card.AutomaticSize = Enum.AutomaticSize.Y
-		card.BackgroundColor3 = theme.headerBg
-		card.BorderSizePixel = 0
-		card.Parent = page
-		round(card, 10)
-		strk(card, theme.stroke, 0.5)
-		pad(card, 10, 10, 10, 10)
-		local ll = Instance.new("UIListLayout")
-		ll.Padding = UDim.new(0, 6)
-		ll.SortOrder = Enum.SortOrder.LayoutOrder
-		ll.Parent = card
-		local title = Instance.new("TextLabel")
-		title.Size = UDim2.new(1, 0, 0, 0)
-		title.AutomaticSize = Enum.AutomaticSize.Y
-		title.BackgroundTransparency = 1
-		title.Font = Enum.Font.GothamBold
-		title.TextSize = 14
-		title.TextColor3 = theme.accent
-		title.TextXAlignment = Enum.TextXAlignment.Left
-		title.TextWrapped = true
-		title.Text = tostring(name or "Section")
-		title.Parent = card
-		local content = Instance.new("Frame")
-		content.Size = UDim2.new(1, 0, 0, 0)
-		content.AutomaticSize = Enum.AutomaticSize.Y
-		content.BackgroundTransparency = 1
-		content.LayoutOrder = 1
-		content.Parent = card
-		local cll = Instance.new("UIListLayout")
-		cll.Padding = UDim.new(0, 6)
-		cll.SortOrder = Enum.SortOrder.LayoutOrder
-		cll.Parent = content
-		local section = {Value = nil}
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=page})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(name or "Section"), Parent=card})
+		local content = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=1, Parent=card})
+		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=content})
+		local section = {Value=nil}
 		function section:AddSubSection(text)
-			local sub = Instance.new("TextLabel")
-			sub.Size = UDim2.new(1, 0, 0, 0)
-			sub.AutomaticSize = Enum.AutomaticSize.Y
-			sub.BackgroundTransparency = 1
-			sub.Font = Enum.Font.GothamBold
-			sub.TextSize = 11
-			sub.TextColor3 = theme.subtext
-			sub.TextXAlignment = Enum.TextXAlignment.Left
-			sub.Text = string.upper(tostring(text or ""))
-			sub.LayoutOrder = 500
-			sub.Parent = content
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.upper(tostring(text or "")), LayoutOrder=500, Parent=content})
 			return section
 		end
-		function section:AddToggle(cfg)
-			return makeToggle(content, cfg, keyPrefix)
-		end
-		function section:AddSlider(cfg)
-			return makeSlider(content, cfg, keyPrefix)
-		end
-		function section:AddDropdown(cfg)
-			return makeDropdown(content, cfg, keyPrefix)
-		end
-		function section:AddInput(cfg)
-			return makeInput(content, cfg, keyPrefix)
-		end
-		function section:AddButton(cfg)
-			return makeButton(content, cfg)
-		end
-		function section:AddParagraph(cfg)
-			return makeParagraph(content, cfg)
-		end
-		function section:AddActionList(cfg)
-			return makeActionList(content, cfg)
-		end
-		function section:AddLiveChat(cfg)
-			cfg = cfg or {}
-			local panel = Instance.new("Frame")
-			panel.Size = UDim2.new(1, 0, 0, tonumber(cfg.Height) or 240)
-			panel.BackgroundColor3 = Color3.fromRGB(15, 16, 24)
-			panel.BorderSizePixel = 0
-			panel.Parent = content
-			round(panel, 8)
-			strk(panel, theme.stroke, 0.6)
-			pad(panel, 10, 10, 10, 10)
-			local t = Instance.new("TextLabel")
-			t.Size = UDim2.new(1, 0, 0, 18)
-			t.BackgroundTransparency = 1
-			t.Font = Enum.Font.GothamBold
-			t.TextSize = 12
-			t.TextColor3 = theme.accent
-			t.TextXAlignment = Enum.TextXAlignment.Left
-			t.Text = tostring(cfg.Title or "Live Chat")
-			t.Parent = panel
-			local b = Instance.new("TextLabel")
-			b.Size = UDim2.new(1, 0, -22, 20)
-			b.Position = UDim2.new(0, 0, 0, 22)
-			b.BackgroundTransparency = 1
-			b.Font = Enum.Font.Gotham
-			b.TextSize = 12
-			b.TextColor3 = theme.subtext
-			b.TextXAlignment = Enum.TextXAlignment.Left
-			b.TextYAlignment = Enum.TextYAlignment.Top
-			b.TextWrapped = true
-			b.Text = "Live chat isn't available in this build.\nJoin the community Discord to chat with other Riuu users."
-			b.Parent = panel
-			return section
-		end
+		function section:AddToggle(cfg) return makeToggle(content, cfg, keyPrefix) end
+		function section:AddSlider(cfg) return makeSlider(content, cfg, keyPrefix) end
+		function section:AddDropdown(cfg) return makeDropdown(content, cfg, keyPrefix) end
+		function section:AddInput(cfg) return makeInput(content, cfg, keyPrefix) end
+		function section:AddButton(cfg) return makeButton(content, cfg) end
+		function section:AddParagraph(cfg) return makeParagraph(content, cfg) end
+		function section:AddActionList(cfg) return makeActionList(content, cfg) end
+		function section:AddLiveChat(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Live Chat", Content="Live chat is not available in this build."}) end
+		function section:AddForum(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Forum", Content="Forum is not available in this build."}) end
+		function section:AddConfigPanel(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Config", Content="Config panel uses settings.json in RiuuHub folder."}) end
+		function section:AddAdminPanel(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Admin Panel", Content="Admin features are owner-only."}) end
 		function section:AddSupportCard()
-			local panel = Instance.new("Frame")
-			panel.Size = UDim2.new(1, 0, 0, 0)
-			panel.AutomaticSize = Enum.AutomaticSize.Y
-			panel.BackgroundColor3 = theme.panelBg
-			panel.BorderSizePixel = 0
-			panel.Parent = content
-			round(panel, 8)
-			strk(panel, theme.accent, 0.5)
-			pad(panel, 10, 10, 10, 10)
-			local pll = Instance.new("UIListLayout")
-			pll.Padding = UDim.new(0, 4)
-			pll.SortOrder = Enum.SortOrder.LayoutOrder
-			pll.Parent = panel
-			local t1 = Instance.new("TextLabel")
-			t1.Size = UDim2.new(1, 0, 0, 0)
-			t1.AutomaticSize = Enum.AutomaticSize.Y
-			t1.BackgroundTransparency = 1
-			t1.Font = Enum.Font.GothamBold
-			t1.TextSize = 13
-			t1.TextColor3 = theme.text
-			t1.TextXAlignment = Enum.TextXAlignment.Left
-			t1.Text = "Riuu Hub — Steal An Egg"
-			t1.Parent = panel
-			local t2 = Instance.new("TextLabel")
-			t2.Size = UDim2.new(1, 0, 0, 0)
-			t2.AutomaticSize = Enum.AutomaticSize.Y
-			t2.BackgroundTransparency = 1
-			t2.Font = Enum.Font.Gotham
-			t2.TextSize = 12
-			t2.TextColor3 = theme.subtext
-			t2.TextXAlignment = Enum.TextXAlignment.Left
-			t2.TextWrapped = true
-			t2.Text = "Owner: " .. tostring(RIUU_OWNER) .. (RIUU_DISCORD ~= "" and ("\n" .. tostring(RIUU_DISCORD)) or "")
-			t2.Parent = panel
+			local panel = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=content})
+			round(panel, 8); strk(panel, theme.accent, 0.5); pad(panel, 10, 10, 10, 10)
+			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=panel})
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text="Riuu Hub — Steal An Egg", Parent=panel})
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="Owner: " .. tostring(RIUU_OWNER) .. (RIUU_DISCORD ~= "" and ("\n" .. tostring(RIUU_DISCORD)) or ""), Parent=panel})
 			return section
 		end
 		return section
 	end
-
+	-- ==== Window ====
 	function Lib:Window(cfg)
 		cfg = cfg or {}
-		elevate()
 		cfgLoad()
-		local gui = Instance.new("ScreenGui")
-		gui.Name = "RiuuHubGui"
-		gui.ResetOnSpawn = false
-		gui.DisplayOrder = 500
-		gui.IgnoreGuiInset = false
-		gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-		gui.Parent = (gethui and gethui()) or game:GetService("CoreGui")
-		local main = Instance.new("Frame")
-		main.AnchorPoint = Vector2.new(0.5, 0.5)
-		main.Position = UDim2.new(0.5, 0, 0.5, 0)
-		main.Size = UDim2.new(0, 820, 0, 520)
-		main.BackgroundColor3 = theme.windowBg
-		main.BorderSizePixel = 0
-		main.Active = true
-		main.Parent = gui
-		round(main, 14)
-		strk(main, theme.stroke, 0.35)
-		local header = Instance.new("Frame")
-		header.Size = UDim2.new(1, 0, 0, 46)
-		header.BackgroundColor3 = theme.headerBg
-		header.BorderSizePixel = 0
-		header.Parent = main
+		local gui = mk("ScreenGui", {Name="RiuuHubGui", ResetOnSpawn=false, DisplayOrder=500, IgnoreGuiInset=false, ZIndexBehavior=Enum.ZIndexBehavior.Sibling}, (gethui and gethui()) or Players.LocalPlayer:FindFirstChildOfClass("PlayerGui"))
+		local main = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 860, 0, 540), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Active=true, Parent=gui})
+		round(main, 14); strk(main, theme.stroke, 0.5)
+		local header = mk("Frame", {Size=UDim2.new(1, 0, 0, 44), BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=main})
 		round(header, 14)
-		local hCornerFix = Instance.new("Frame")
-		hCornerFix.Size = UDim2.new(1, 0, 0, 16)
-		hCornerFix.Position = UDim2.new(0, 0, 1, -16)
-		hCornerFix.BackgroundColor3 = theme.headerBg
-		hCornerFix.BorderSizePixel = 0
-		hCornerFix.Parent = header
-		local strokeLine = Instance.new("Frame")
-		strokeLine.Size = UDim2.new(1, 0, 0, 1)
-		strokeLine.Position = UDim2.new(0, 0, 1, 0)
-		strokeLine.BackgroundColor3 = theme.stroke
-		strokeLine.BorderSizePixel = 0
-		strokeLine.Parent = header
-		local titleLbl = Instance.new("TextLabel")
-		titleLbl.Position = UDim2.new(0, 14, 0, 0)
-		titleLbl.Size = UDim2.new(1, -220, 1, 0)
-		titleLbl.BackgroundTransparency = 1
-		titleLbl.Font = Enum.Font.GothamBold
-		titleLbl.TextSize = 15
-		titleLbl.TextColor3 = theme.text
-		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-		titleLbl.TextTruncate = Enum.TextTruncate.AtEnd
-		titleLbl.Text = tostring(cfg.Title or "Riuu Hub")
-		titleLbl.Parent = header
+		mk("Frame", {Size=UDim2.new(1, 0, 0, 14), Position=UDim2.new(0, 0, 1, -14), BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=header})
+		local titleLbl = mk("TextLabel", {Position=UDim2.new(0, 14, 0, 0), Size=UDim2.new(1, -220, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=15, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=tostring(cfg.Title or "Riuu Hub"), Parent=header})
 		if cfg.Footer then
-			local footerLbl = Instance.new("TextLabel")
-			footerLbl.AnchorPoint = Vector2.new(0, 0.5)
-			footerLbl.Position = UDim2.new(0, 16 + titleLbl.TextBounds.X + 8, 0.5, 0)
-			footerLbl.Size = UDim2.new(0, 200, 0, 16)
-			footerLbl.BackgroundTransparency = 1
-			footerLbl.Font = Enum.Font.Gotham
-			footerLbl.TextSize = 11
-			footerLbl.TextColor3 = theme.subtext
-			footerLbl.TextXAlignment = Enum.TextXAlignment.Left
-			footerLbl.TextTruncate = Enum.TextTruncate.AtEnd
-			footerLbl.Text = tostring(cfg.Footer)
-			footerLbl.Parent = header
+			mk("TextLabel", {AnchorPoint=Vector2.new(0, 0.5), Position=UDim2.new(0, 16 + titleLbl.TextBounds.X + 8, 0.5, 0), Size=UDim2.new(0, 200, 0, 16), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=tostring(cfg.Footer), Parent=header})
 		end
-		local ownerChip = Instance.new("TextLabel")
-		ownerChip.AnchorPoint = Vector2.new(1, 0.5)
-		ownerChip.Position = UDim2.new(1, -76, 0.5, 0)
-		ownerChip.Size = UDim2.new(0, 132, 0, 22)
-		ownerChip.BackgroundColor3 = RiuuIsOwner() and theme.accent or theme.panelBg
-		ownerChip.BackgroundTransparency = RiuuIsOwner() and 0.2 or 0
-		ownerChip.BorderSizePixel = 0
-		ownerChip.Font = Enum.Font.GothamBold
-		ownerChip.TextSize = 10
-		ownerChip.TextColor3 = RiuuIsOwner() and theme.text or theme.subtext
-		ownerChip.Text = "★ OWNER · " .. tostring(RIUU_OWNER)
-		ownerChip.Parent = header
-		round(ownerChip, 11)
-		strk(ownerChip, theme.accent, 0.5)
-
-		local minBtn = Instance.new("TextButton")
-		minBtn.AnchorPoint = Vector2.new(1, 0.5)
-		minBtn.Position = UDim2.new(1, -44, 0.5, 0)
-		minBtn.Size = UDim2.new(0, 26, 0, 26)
-		minBtn.BackgroundColor3 = theme.panelBg
-		minBtn.BorderSizePixel = 0
-		minBtn.Font = Enum.Font.GothamBold
-		minBtn.TextSize = 14
-		minBtn.TextColor3 = theme.subtext
-		minBtn.Text = "–"
-		minBtn.AutoButtonColor = false
-		minBtn.Parent = header
-		round(minBtn, 13)
-		hoverTween(minBtn)
-		local closeBtn = Instance.new("TextButton")
-		closeBtn.AnchorPoint = Vector2.new(1, 0.5)
-		closeBtn.Position = UDim2.new(1, -12, 0.5, 0)
-		closeBtn.Size = UDim2.new(0, 26, 0, 26)
-		closeBtn.BackgroundColor3 = theme.danger
-		closeBtn.BackgroundTransparency = 0.65
-		closeBtn.BorderSizePixel = 0
-		closeBtn.Font = Enum.Font.GothamBold
-		closeBtn.TextSize = 12
-		closeBtn.TextColor3 = theme.text
-		closeBtn.Text = "×"
-		closeBtn.AutoButtonColor = false
-		closeBtn.Parent = header
-		round(closeBtn, 13)
-		hoverTween(closeBtn, 10)
-		local body = Instance.new("Frame")
-		body.Position = UDim2.new(0, 0, 0, 46)
-		body.Size = UDim2.new(1, 0, 1, -46)
-		body.BackgroundTransparency = 1
-		body.Parent = main
-		local sidebar = Instance.new("ScrollingFrame")
-		sidebar.Size = UDim2.new(0, 168, 1, 0)
-		sidebar.BackgroundTransparency = 1
-		sidebar.BorderSizePixel = 0
-		sidebar.ScrollBarThickness = 3
-		sidebar.ScrollBarImageColor3 = theme.accent
-		sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
-		sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-		sidebar.ScrollingDirection = Enum.ScrollingDirection.Y
-		sidebar.Parent = body
+		local ownerChip = mk("TextLabel", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -76, 0.5, 0), Size=UDim2.new(0, 132, 0, 22), BackgroundColor3=RiuuIsOwner() and theme.accent or theme.panelBg, BackgroundTransparency=RiuuIsOwner() and 0.2 or 0, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=10, TextColor3=RiuuIsOwner() and theme.text or theme.subtext, Text=(RiuuIsOwner() and "★ OWNER · " or "Owner · ") .. tostring(RIUU_OWNER), Parent=header})
+		round(ownerChip, 11); strk(ownerChip, theme.accent, 0.5)
+		local minBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -44, 0.5, 0), Size=UDim2.new(0, 26, 0, 26), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.subtext, Text="–", AutoButtonColor=false, Parent=header})
+		round(minBtn, 13); hoverTween(minBtn)
+		local closeBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -12, 0.5, 0), Size=UDim2.new(0, 26, 0, 26), BackgroundColor3=theme.danger, BackgroundTransparency=0.65, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="×", AutoButtonColor=false, Parent=header})
+		round(closeBtn, 13); hoverTween(closeBtn, 14)
+		local body = mk("Frame", {Position=UDim2.new(0, 0, 0, 44), Size=UDim2.new(1, 0, 1, -44), BackgroundTransparency=1, Parent=main})
+		local sidebar = mk("ScrollingFrame", {Size=UDim2.new(0, 170, 1, 0), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=body})
 		pad(sidebar, 10, 6, 10, 10)
-		local sll = Instance.new("UIListLayout")
-		sll.Padding = UDim.new(0, 5)
-		sll.SortOrder = Enum.SortOrder.LayoutOrder
-		sll.Parent = sidebar
-		local holder = Instance.new("Frame")
-		holder.Position = UDim2.new(0, 168, 0, 0)
-		holder.Size = UDim2.new(1, -168, 1, 0)
-		holder.BackgroundTransparency = 1
-		holder.Parent = body
-		local win = {Gui = gui, Tabs = {}}
+		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=sidebar})
+		local holder = mk("Frame", {Position=UDim2.new(0, 170, 0, 0), Size=UDim2.new(1, -170, 1, 0), BackgroundTransparency=1, Parent=body})
+		local win = {Gui=gui, Tabs={}}
 		local tabCount = 0
 		function win:AddTab(tcfg)
 			tcfg = tcfg or {}
 			tabCount = tabCount + 1
 			local name = tostring(tcfg.Name or ("Tab " .. tabCount))
-			local page = Instance.new("ScrollingFrame")
-			page.Size = UDim2.new(1, 0, 1, 0)
-			page.BackgroundTransparency = 1
-			page.BorderSizePixel = 0
-			page.ScrollBarThickness = 3
-			page.ScrollBarImageColor3 = theme.accent
-			page.CanvasSize = UDim2.new(0, 0, 0, 0)
-			page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-			page.ScrollingDirection = Enum.ScrollingDirection.Y
-			page.Visible = false
-			page.Parent = holder
+			local page = mk("ScrollingFrame", {Size=UDim2.new(1, 0, 1, 0), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Visible=false, Parent=holder})
 			pad(page, 12, 12, 12, 6)
-			local pll = Instance.new("UIListLayout")
-			pll.Padding = UDim.new(0, 8)
-			pll.SortOrder = Enum.SortOrder.LayoutOrder
-			pll.Parent = page
-			local tabBtn = Instance.new("TextButton")
-			tabBtn.Size = UDim2.new(1, -6, 0, 32)
-			tabBtn.BackgroundColor3 = theme.panelBg
-			tabBtn.BackgroundTransparency = 1
-			tabBtn.BorderSizePixel = 0
-			tabBtn.Font = Enum.Font.GothamSemibold
-			tabBtn.TextSize = 12
-			tabBtn.TextColor3 = theme.subtext
-			tabBtn.TextXAlignment = Enum.TextXAlignment.Left
-			tabBtn.AutoButtonColor = false
-			tabBtn.Text = ""
-			tabBtn.LayoutOrder = tabCount
-			tabBtn.Parent = sidebar
-			round(tabBtn, 8)
-			pad(tabBtn, 0, 8, 0, 10)
-			local dot = Instance.new("Frame")
-			dot.AnchorPoint = Vector2.new(0, 0.5)
-			dot.Position = UDim2.new(0, 2, 0.5, 0)
-			dot.Size = UDim2.new(0, 6, 0, 6)
-			dot.BackgroundColor3 = theme.accent
-			dot.BackgroundTransparency = 1
-			dot.BorderSizePixel = 0
-			dot.Parent = tabBtn
+			mk("UIListLayout", {Padding=UDim.new(0, 10), SortOrder=Enum.SortOrder.LayoutOrder, Parent=page})
+			local tabBtn = mk("TextButton", {Size=UDim2.new(1, -6, 0, 32), BackgroundColor3=theme.panelBg, BackgroundTransparency=1, BorderSizePixel=0, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, AutoButtonColor=false, Text="", LayoutOrder=tabCount, Parent=sidebar})
+			round(tabBtn, 8); pad(tabBtn, 0, 8, 0, 10)
+			local dot = mk("Frame", {AnchorPoint=Vector2.new(0, 0.5), Position=UDim2.new(0, 2, 0.5, 0), Size=UDim2.new(0, 6, 0, 6), BackgroundColor3=theme.accent, BackgroundTransparency=1, BorderSizePixel=0, Parent=tabBtn})
 			round(dot, 3)
-			local tLbl = Instance.new("TextLabel")
-			tLbl.Size = UDim2.new(1, -14, 1, 0)
-			tLbl.Position = UDim2.new(0, 14, 0, 0)
-			tLbl.BackgroundTransparency = 1
-			tLbl.Font = Enum.Font.GothamSemibold
-			tLbl.TextSize = 12
-			tLbl.TextColor3 = theme.subtext
-			tLbl.TextXAlignment = Enum.TextXAlignment.Left
-			tLbl.TextTruncate = Enum.TextTruncate.AtEnd
-			tLbl.Text = name
-			tLbl.Parent = tabBtn
-			hoverTween(tabBtn, 8)
-			local tab = {Name = name, Page = page}
+			local tLbl = mk("TextLabel", {Size=UDim2.new(1, -14, 1, 0), Position=UDim2.new(0, 14, 0, 0), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=name, Parent=tabBtn})
+			hoverTween(tabBtn)
+			local tab = {Name=name, Page=page}
 			local sectionCount = 0
-
 			function tab:AddSection(sname)
 				sectionCount = sectionCount + 1
 				local sec = makeSection(page, sname, name .. "/" .. tostring(sname))
@@ -1127,51 +428,32 @@ local function RiuuCreateUI()
 				return sec
 			end
 			function tab:AddSubSection(text)
-				local sub = Instance.new("TextLabel")
-				sub.Size = UDim2.new(1, 0, 0, 0)
-				sub.AutomaticSize = Enum.AutomaticSize.Y
-				sub.BackgroundTransparency = 1
-				sub.Font = Enum.Font.GothamBold
-				sub.TextSize = 12
-				sub.TextColor3 = theme.accent
-				sub.TextXAlignment = Enum.TextXAlignment.Left
-				sub.Text = string.upper(tostring(text or ""))
-				sub.LayoutOrder = sectionCount
-				sub.Parent = page
+				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text=string.upper(tostring(text or "")), LayoutOrder=sectionCount, Parent=page})
 				return tab
 			end
-			function win:SelectTab(t)
-				for _, other in ipairs(win.Tabs) do
-					other.Page.Visible = (other == t)
-					other.Button.TextColor3 = (other == t) and theme.text or theme.subtext
-					other.Button.BackgroundTransparency = (other == t) and 0 or 1
-					other.Dot.BackgroundTransparency = (other == t) and 0 or 1
-					other.Label.Font = (other == t) and Enum.Font.GothamBold or Enum.Font.GothamSemibold
-				end
+			function tab:UpdateTitle(newName)
+				tLbl.Text = tostring(newName); name = tostring(newName)
 			end
-			tab.Button = tabBtn
-			tab.Label = tLbl
-			tab.Dot = dot
+			tab.Button = tabBtn; tab.Label = tLbl; tab.Dot = dot
 			win.Tabs[#win.Tabs + 1] = tab
-			tabBtn.MouseButton1Click:Connect(function()
-				win:SelectTab(tab)
-			end)
-			if #win.Tabs == 1 then
-				win:SelectTab(tab)
-			end
+			tabBtn.MouseButton1Click:Connect(function() win:SelectTab(tab) end)
+			if #win.Tabs == 1 then win:SelectTab(tab) end
 			return tab
 		end
 		function win:SelectTab(t)
-			-- stub kept for early-call safety
+			for _, other in ipairs(win.Tabs) do
+				other.Page.Visible = (other == t)
+				other.Button.TextColor3 = (other == t) and theme.text or theme.subtext
+				other.Button.BackgroundTransparency = (other == t) and 0 or 1
+				other.Dot.BackgroundTransparency = (other == t) and 0 or 1
+				other.Label.Font = (other == t) and Enum.Font.GothamBold or Enum.Font.GothamSemibold
+			end
 		end
 		do
-			local dragging = false
-			local dragStart, startPos
+			local dragging, dragStart, startPos = false, nil, nil
 			header.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					dragging = true
-					dragStart = input.Position
-					startPos = main.Position
+					dragging = true; dragStart = input.Position; startPos = main.Position
 				end
 			end)
 			UIS.InputChanged:Connect(function(input)
@@ -1181,42 +463,24 @@ local function RiuuCreateUI()
 				end
 			end)
 			UIS.InputEnded:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					dragging = false
-				end
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 			end)
 		end
-		local pill = Instance.new("TextButton")
-		pill.AnchorPoint = Vector2.new(0, 1)
-		pill.Position = UDim2.new(0, 16, 1, -16)
-		pill.Size = UDim2.new(0, 110, 0, 34)
-		pill.BackgroundColor3 = theme.accent
-		pill.BorderSizePixel = 0
-		pill.Font = Enum.Font.GothamBold
-		pill.TextSize = 13
-		pill.TextColor3 = theme.text
-		pill.Text = "Riuu Hub"
-		pill.Visible = false
-		pill.AutoButtonColor = false
-		pill.ZIndex = 50
-		pill.Parent = gui
-		round(pill, 17)
-		hoverTween(pill, 24)
-		pill.MouseButton1Click:Connect(function()
-			main.Visible = true
-			pill.Visible = false
-		end)
-		minBtn.MouseButton1Click:Connect(function()
-			main.Visible = false
-			pill.Visible = true
-		end)
-		closeBtn.MouseButton1Click:Connect(function()
-			pcall(function() gui:Destroy() end)
-		end)
+		local pill = mk("TextButton", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 16, 1, -16), Size=UDim2.new(0, 110, 0, 34), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.text, Text="Riuu Hub", Visible=false, AutoButtonColor=false, ZIndex=50, Parent=gui})
+		round(pill, 17); hoverTween(pill)
+		pill.MouseButton1Click:Connect(function() main.Visible = true; pill.Visible = false end)
+		minBtn.MouseButton1Click:Connect(function() main.Visible = false; pill.Visible = true end)
+		closeBtn.MouseButton1Click:Connect(function() pcall(function() gui:Destroy() end) end)
 		return win
 	end
 	return Lib
 	end
+
+
+
+
+
+
 
 
 local function geniter(f, s, c)
