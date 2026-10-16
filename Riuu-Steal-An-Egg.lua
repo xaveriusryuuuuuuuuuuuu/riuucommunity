@@ -27504,6 +27504,7 @@ local function RiuuCreateUI()
 		return ok and type(data) == "table" and data or {}
 	end
 	local cfg = cfgLoad()
+	cfgSave()
 	local function cfgSave()
 		pcall(function()
 			if writefile and makefolder then
@@ -28699,8 +28700,8 @@ local function RiuuCreateUI()
 		genv.ChloeX_ReopenPrompt = nil
 		genv.ChloeX_Instance = nil
 
-		RiuuLib = RiuuCreateUI()
-
+		local ok, result = pcall(RiuuCreateUI)
+		RiuuLib = ok and type(result) == "table" and result or nil
 		if not RiuuLib then
 			warn("[Riuu] UI library failed to load")
 
@@ -32557,6 +32558,26 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 			Name = "Donate",
 			Icon = "donator"
 		}):AddSection("Support Riuu", true):AddSupportCard({})
+			if RiuuIsOwner() then
+				local adminTab = v4742:AddTab({
+					Name = "Admin Panel",
+					Icon = "shield",
+				})
+
+				local announcements = adminTab:AddSection("Announcements")
+				announcements:AddParagraph({
+					Title = "Riuu Hub Announcements",
+					Content = "Welcome to Riuu Hub â€” Steal An Egg."
+				})
+
+				local rules = adminTab:AddSection("Rules")
+				rules:AddParagraph({
+					Title = "Admin Panel Rules",
+					Content = "1. Do not abuse admin commands.\n2. Do not share scripts.\n3. Respect other players."
+			})
+
+			end
+
 
 		do
 			local function v4904(p1104, p1105)
