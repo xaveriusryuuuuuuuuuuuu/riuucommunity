@@ -1,7 +1,7 @@
 -- ==== Riuu branding & owner ====
 local RIUU_OWNER = "28cellotzy"
-local RIUU_DISCORD = ""
-local RIUU_SCRIPT_URL = "" -- fill with the raw URL of this script to enable auto re-execute after teleport
+local RIUU_DISCORD = "noncxvrs"
+local RIUU_SCRIPT_URL = "https://raw.githubusercontent.com/xaveriusryuuuuuuuuuuuu/riuucommunity/refs/heads/main/Riuu-Steal-An-Egg.lua" -- fill with the raw URL of this script to enable auto re-execute after teleport
 
 local function RiuuIsOwner()
 	local lp = game:GetService("Players").LocalPlayer
@@ -247,8 +247,29 @@ end
 		cfg = cfg or {}
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Parent=parent})
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
-		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Text or cfg.Title or ""), Parent=card})
-		return card
+		local titleLbl = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or cfg.Text or ""), Parent=card})
+		local bodyLbl
+		if cfg.Content then
+			bodyLbl = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
+		end
+		local handle = {Frame = card}
+		function handle:SetTitle(text)
+			pcall(function() titleLbl.Text = tostring(text or "") end)
+		end
+		function handle:SetText(text)
+			pcall(function()
+				text = tostring(text or "")
+				if bodyLbl then bodyLbl.Text = text else titleLbl.Text = text end
+			end)
+		end
+		handle.SetContent = handle.SetText
+		function handle:Alive()
+			local ok, result = pcall(function()
+				return card.Parent ~= nil
+			end)
+			return ok and result == true
+		end
+		return handle
 	end
 	local function makeDropdown(parent, cfg, keyPrefix)
 		cfg = cfg or {}
@@ -305,8 +326,17 @@ end
 			cfgSet(key, value)
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
-		function ctrl:Refresh() rebuild() end
+		function ctrl:Refresh(opts)
+			if opts ~= nil then options = type(opts) == "table" and opts or {} end
+			rebuild()
+		end
 		function ctrl:SetOptions(opts) options = type(opts) == "table" and opts or {}; rebuild() end
+		function ctrl:Alive()
+			local ok, result = pcall(function()
+				return card.Parent ~= nil
+			end)
+			return ok and result == true
+		end
 		Lib._controls[key] = ctrl
 		return ctrl
 	end
@@ -320,7 +350,13 @@ end
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=rowsContainer})
 		local emptyLbl = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="(no entries)", Visible=false, Parent=rowsContainer})
 		local buttonColors = {accent=theme.accent, success=Color3.fromRGB(60, 200, 120), danger=theme.danger, warn=Color3.fromRGB(240, 180, 60)}
-		local handle = {}
+		local handle = {Frame = card}
+		function handle:Alive()
+			local ok, result = pcall(function()
+				return card.Parent ~= nil
+			end)
+			return ok and result == true
+		end
 		function handle:Update(list)
 			for _, c in ipairs(rowsContainer:GetChildren()) do if c:IsA("Frame") and c ~= emptyLbl then c:Destroy() end end
 			if type(list) ~= "table" or #list == 0 then emptyLbl.Visible = true; return end
@@ -330,13 +366,13 @@ end
 				local rowFrame = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.windowBg, BorderSizePixel=0, LayoutOrder=(row.LayoutOrder or 0), Parent=rowsContainer})
 				round(rowFrame, 6); strk(rowFrame, theme.stroke, 0.4); pad(rowFrame, 8, 6, 8, 6)
 				mk("UIListLayout", {Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=rowFrame})
-				mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.name or ""), Parent=rowFrame})
+				mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.name or ""), Parent=rowFrame})
 				if row.sub then
-					mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.sub), LayoutOrder=1, Parent=rowFrame})
+					mk("TextLabel", {Size=UDim2.new(1, -80, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(row.sub), LayoutOrder=1, Parent=rowFrame})
 				end
-				mk("TextLabel", {Size=UDim2.new(0, 120, 0, 16), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.status or ""), Parent=rowFrame})
+				mk("TextLabel", {Size=UDim2.new(0, 120, 0, 16), BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.status or ""), Parent=rowFrame})
 				if row.statusSub then
-					mk("TextLabel", {Size=UDim2.new(0, 120, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.statusSub), LayoutOrder=3, Parent=rowFrame})
+					mk("TextLabel", {Size=UDim2.new(0, 120, 0, 14), BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, TextWrapped=true, Text=tostring(row.statusSub), LayoutOrder=3, Parent=rowFrame})
 				end
 				if row.button then
 					local bColor = buttonColors[tostring(row.buttonColor or "accent")] or theme.accent
