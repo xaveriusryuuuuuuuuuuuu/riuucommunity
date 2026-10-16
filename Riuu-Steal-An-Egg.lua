@@ -1,7 +1,7 @@
 -- ==== Riuu branding & owner ====
 local RIUU_OWNER = "28cellotzy"
 local RIUU_DISCORD = ""
-local RIUU_SCRIPT_URL = ""
+local RIUU_SCRIPT_URL = "" -- fill with the raw URL of this script to enable auto re-execute after teleport
 
 local function RiuuIsOwner()
 	local lp = game:GetService("Players").LocalPlayer
@@ -57,6 +57,8 @@ local function RiuuCreateUI()
 	end
 
 	local Lib = {}
+	Lib._controls = {}
+	Lib._configTable = nil
 
 	local function mk(class, props, parent)
 		local inst = Instance.new(class)
@@ -150,7 +152,9 @@ end
 			Tween:Create(knob, TweenInfo.new(0.14), {Position = UDim2.new(0, value and 21 or 3, 0.5, 0)}):Play()
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
+		ctrl.Frame = card
 		switch.MouseButton1Click:Connect(function() ctrl:SetValue(not value, true); cfgSet(key, value) end)
+		Lib._controls[key] = ctrl
 		return ctrl
 	end
 	local function makeSlider(parent, cfg, keyPrefix)
@@ -195,6 +199,7 @@ end
 			end
 		end)
 		UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false; cfgSet(key, value) end end)
+		Lib._controls[key] = ctrl
 		return ctrl
 	end
 	local function makeInput(parent, cfg, keyPrefix)
@@ -220,6 +225,7 @@ end
 			value = tostring(v or ""); box.Text = value; cfgSet(key, value)
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
+		Lib._controls[key] = ctrl
 		return ctrl
 	end
 
@@ -301,6 +307,7 @@ end
 		end
 		function ctrl:Refresh() rebuild() end
 		function ctrl:SetOptions(opts) options = type(opts) == "table" and opts or {}; rebuild() end
+		Lib._controls[key] = ctrl
 		return ctrl
 	end
 	local function makeActionList(parent, cfg)
@@ -345,6 +352,548 @@ end
 		end
 		return handle
 	end
+	-- ==== Riuu community & config storage ====
+	local FORUM_FILE = RIUU_DIR .. "/forum.json"
+	local CONFIG_DIR = RIUU_DIR .. "/configs"
+
+	local function forumLoad()
+		local ok, data = pcall(function()
+			if readfile and isfile and isfile(FORUM_FILE) then
+				return HttpService:JSONDecode(readfile(FORUM_FILE))
+			end
+		end)
+		if ok and type(data) == "table" and type(data.threads) == "table" then
+			return data
+		end
+		return { nextId = 1, threads = {} }
+	end
+	local function forumSave(data)
+		pcall(function()
+			if writefile then
+				pcall(function() makefolder(RIUU_DIR) end)
+				writefile(FORUM_FILE, HttpService:JSONEncode(data))
+			end
+		end)
+	end
+	local function configPath(name)
+		return CONFIG_DIR .. "/" .. tostring(name) .. ".json"
+	end
+	local function configList()
+		local names = {}
+		pcall(function()
+			if listfiles and isfolder and isfolder(CONFIG_DIR) then
+				for _, path in ipairs(listfiles(CONFIG_DIR)) do
+					local base = string.match(tostring(path), "[^/\\]+$") or tostring(path)
+					base = string.match(tostring(base), "^(.*)%.json$") or base
+					names[#names + 1] = base
+				end
+			end
+		end)
+		table.sort(names)
+		return names
+	end
+	local function sanitizeForJson(value)
+		local t = type(value)
+		if t == "string" or t == "number" or t == "boolean" then
+			return value
+		end
+		if t == "table" then
+			local out = {}
+			for k, v in pairs(value) do
+				if type(k) == "string" or type(k) == "number" then
+					out[k] = sanitizeForJson(v)
+				end
+			end
+			return out
+		end
+		return nil
+	end
+	local function configSave(name)
+		name = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", "")
+		if name == "" then
+			return false, "Enter a config name first."
+		end
+		local profile = {
+			Name = name,
+			SavedAt = os.time(),
+			SavedBy = (Players.LocalPlayer and Players.LocalPlayer.Name) or "",
+			Ui = sanitizeForJson(cfg),
+			Sena = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
+		}
+		local written = false
+		pcall(function()
+			if writefile then
+				pcall(function() makefolder(RIUU_DIR) end)
+				pcall(function() makefolder(CONFIG_DIR) end)
+				writefile(configPath(name), HttpService:JSONEncode(profile))
+				written = true
+			end
+		end)
+		if not written then
+			return false, "Your executor does not support writefile."
+		end
+		return true, name
+	end
+	local function configLoad(name)
+		local raw
+		pcall(function()
+			if readfile and isfile and isfile(configPath(name)) then
+				raw = readfile(configPath(name))
+			end
+		end)
+		if type(raw) ~= "string" then
+			return false, "Config not found."
+		end
+		local ok, profile = pcall(function()
+			return HttpService:JSONDecode(raw)
+		end)
+		if not ok or type(profile) ~= "table" then
+			return false, "Config file is corrupted."
+		end
+		if type(profile.Ui) == "table" then
+			for key, value in pairs(profile.Ui) do
+				local ctrl = Lib._controls[key]
+				if type(ctrl) == "table" and type(ctrl.SetValue) == "function" then
+					pcall(ctrl.SetValue, ctrl, value, true)
+				end
+			end
+		end
+		if type(profile.Sena) == "table" and type(Lib._configTable) == "table" then
+			for k, v in pairs(profile.Sena) do
+				if type(Lib._configTable[k]) == type(v) then
+					if type(v) == "table" then
+						local copy = {}
+						for i, vv in ipairs(v) do
+							copy[i] = vv
+						end
+						Lib._configTable[k] = copy
+					else
+						Lib._configTable[k] = v
+					end
+				end
+			end
+		end
+		return true, name
+	end
+	local function configDelete(name)
+		local removed = false
+		pcall(function()
+			if delfile and isfile and isfile(configPath(name)) then
+				delfile(configPath(name))
+				removed = true
+			elseif writefile then
+				pcall(function() makefolder(CONFIG_DIR) end)
+				writefile(configPath(name), "")
+				removed = true
+			end
+		end)
+		return removed
+	end
+	local function escapeRich(text)
+		text = tostring(text or "")
+		text = text:gsub("&", "&amp;")
+		text = text:gsub("<", "&lt;")
+		text = text:gsub(">", "&gt;")
+		return text
+	end
+
+	local function makeLiveChat(parent, cfg)
+		cfg = cfg or {}
+		local height = math.clamp(tonumber(cfg.Height) or 300, 140, 560)
+
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, height), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 8, 8, 8, 8)
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 16), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg.Title or "Live Chat"), Parent=card})
+
+		local list = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 22), Size=UDim2.new(1, 0, 1, -60), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=card})
+		round(list, 6); pad(list, 6, 6, 6, 6)
+		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=list})
+
+		local box = mk("TextBox", {Position=UDim2.new(0, 0, 1, -30), Size=UDim2.new(1, -74, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Type a message...", ClearTextOnFocus=false, Text="", Parent=card})
+		round(box, 6)
+		local sendBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 1), Position=UDim2.new(1, 0, 1, -30), Size=UDim2.new(0, 66, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Send", AutoButtonColor=false, Parent=card})
+		round(sendBtn, 6); hoverTween(sendBtn)
+
+		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "You"
+		local history = {}
+		local lastKey, lastTime = nil, 0
+
+		local function addMessage(author, text)
+			author = tostring(author or "?")
+			text = tostring(text or "")
+			if text == "" then return end
+			local key = author .. "|" .. text
+			local now = os.clock()
+			if key == lastKey and now - lastTime < 1.5 then return end
+			lastKey, lastTime = key, now
+
+			local row = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=string.format('<font color="%s"><b>%s:</b></font> %s', author == myName and "#5865f2" or "#a0a5af", escapeRich(author), escapeRich(text)), LayoutOrder=#history + 1, Parent=list})
+			history[#history + 1] = row
+			if #history > 120 then
+				local old = table.remove(history, 1)
+				pcall(function() old:Destroy() end)
+			end
+			task.defer(function()
+				pcall(function()
+					list.CanvasPosition = Vector2.new(0, math.max(list.AbsoluteCanvasSize.Y, 0))
+				end)
+			end)
+		end
+
+		local function sendCurrent()
+			local text = box.Text
+			if type(text) ~= "string" or text:gsub("%s+", "") == "" then return end
+			box.Text = ""
+			task.spawn(function()
+				local sent = false
+				pcall(function()
+					local channels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
+					local general = channels and channels:FindFirstChild("RBXGeneral")
+					if general then
+						general:SendAsync(text)
+						sent = true
+					end
+				end)
+				if not sent then
+					pcall(function()
+						local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+						local say = events and events:FindFirstChild("SayMessageRequest")
+						if say then
+							say:FireServer(text, "All")
+						end
+					end)
+				end
+			end)
+		end
+		sendBtn.MouseButton1Click:Connect(sendCurrent)
+		box.FocusLost:Connect(function(enter)
+			if enter then sendCurrent() end
+		end)
+
+		task.spawn(function()
+			pcall(function()
+				game:GetService("TextChatService").MessageReceived:Connect(function(msg)
+					pcall(function()
+						if msg and msg.TextSource and msg.Text and #tostring(msg.Text) > 0 then
+							addMessage(msg.TextSource.Name, msg.Text)
+						end
+					end)
+				end)
+			end)
+			pcall(function()
+				local function hook(pl)
+					pcall(function()
+						pl.Chatted:Connect(function(text)
+							addMessage(pl.Name, text)
+						end)
+					end)
+				end
+				for _, pl in ipairs(Players:GetPlayers()) do
+					hook(pl)
+				end
+				Players.PlayerAdded:Connect(hook)
+			end)
+			addMessage("Riuu", "Live chat mirrors this server's chat. Type below to send a message.")
+		end)
+
+		return card
+	end
+
+	local function makeForum(parent, cfg)
+		cfg = cfg or {}
+		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "Player"
+
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 400), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 8, 8, 8, 8)
+
+		local state = { view = "list", threadId = nil }
+		local data = forumLoad()
+		if #data.threads == 0 and (tonumber(data.nextId) or 1) <= 1 then
+			data.nextId = 2
+			data.threads[1] = {
+				id = 1,
+				title = "Welcome to Riuu Hub",
+				author = "Riuu",
+				created = os.time(),
+				posts = {
+					{ author = "Riuu", text = "Welcome to the Riuu Hub community forum.\n\nOwner: " .. tostring(RIUU_OWNER) .. "\n\nCreate a thread and leave your feedback or requests here.", time = os.time() }
+				}
+			}
+			forumSave(data)
+		end
+
+		local body = mk("Frame", {Size=UDim2.new(1, 0, 1, 0), BackgroundTransparency=1, Parent=card})
+
+		local function fmtTime(ts)
+			return os.date("%Y-%m-%d %H:%M", tonumber(ts) or os.time())
+		end
+		local function canDelete(author)
+			author = tostring(author or "")
+			return RiuuIsOwner() or author == myName or author == "Riuu"
+		end
+		local function findThread(id)
+			for i, th in ipairs(data.threads) do
+				if th.id == id then
+					return i, th
+				end
+			end
+			return nil
+		end
+		local render
+
+		local function makeBackButton()
+			local backBtn = mk("TextButton", {Size=UDim2.new(0, 76, 0, 24), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.subtext, Text="Back", AutoButtonColor=false, Parent=body})
+			round(backBtn, 6); hoverTween(backBtn)
+			backBtn.MouseButton1Click:Connect(function()
+				state.view = "list"
+				state.threadId = nil
+				render()
+			end)
+			return backBtn
+		end
+
+		function render()
+			for _, c in ipairs(body:GetChildren()) do
+				pcall(function() c:Destroy() end)
+			end
+
+			if state.view == "list" then
+				local bar = mk("Frame", {Size=UDim2.new(1, 0, 0, 28), BackgroundTransparency=1, Parent=body})
+				mk("TextLabel", {Size=UDim2.new(1, -130, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text="Community Forum", Parent=bar})
+				local newBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, 0, 0, 0), Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, Text="+ New Thread", AutoButtonColor=false, Parent=bar})
+				round(newBtn, 6); hoverTween(newBtn)
+				newBtn.MouseButton1Click:Connect(function()
+					state.view = "new"
+					render()
+				end)
+
+				mk("TextLabel", {Position=UDim2.new(0, 0, 0, 30), Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="Threads are saved on this device (RiuuHub/forum.json).", Parent=body})
+
+				local list = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 48), Size=UDim2.new(1, 0, 1, -48), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=body})
+				mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=list})
+
+				if #data.threads == 0 then
+					mk("TextLabel", {Size=UDim2.new(1, 0, 0, 24), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="No threads yet — create the first one!", Parent=list})
+				end
+				for idx = #data.threads, 1, -1 do
+					local th = data.threads[idx]
+					local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.windowBg, BorderSizePixel=0, Parent=list})
+					round(row, 6); strk(row, theme.stroke, 0.4); pad(row, 8, 6, 8, 6)
+					mk("TextLabel", {Size=UDim2.new(1, -170, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(th.title or "(untitled)"), Parent=row})
+					mk("TextLabel", {Size=UDim2.new(1, -170, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.format("by %s · %s · %d replies", tostring(th.author or "?"), fmtTime(th.created), #(th.posts or {})), LayoutOrder=1, Parent=row})
+					local openBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, 0, 0, 2), Size=UDim2.new(0, 64, 0, 24), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, Text="Open", AutoButtonColor=false, Parent=row})
+					round(openBtn, 6)
+					openBtn.MouseButton1Click:Connect(function()
+						state.view = "open"
+						state.threadId = th.id
+						render()
+					end)
+					if canDelete(th.author) then
+						local delBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, -70, 0, 2), Size=UDim2.new(0, 24, 0, 24), BackgroundColor3=theme.danger, BackgroundTransparency=0.55, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, Text="X", AutoButtonColor=false, Parent=row})
+						round(delBtn, 6)
+						delBtn.MouseButton1Click:Connect(function()
+							table.remove(data.threads, idx)
+							forumSave(data)
+							render()
+						end)
+					end
+				end
+			elseif state.view == "new" then
+				makeBackButton()
+				mk("TextLabel", {Position=UDim2.new(0, 84, 0, 4), Size=UDim2.new(1, -84, 0, 20), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text="New Thread", Parent=body})
+
+				mk("TextLabel", {Position=UDim2.new(0, 0, 0, 32), Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="Title", Parent=body})
+				local titleBox = mk("TextBox", {Position=UDim2.new(0, 0, 0, 48), Size=UDim2.new(1, 0, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Thread title", ClearTextOnFocus=false, Text="", Parent=body})
+				round(titleBox, 6)
+
+				mk("TextLabel", {Position=UDim2.new(0, 0, 0, 84), Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="Message", Parent=body})
+				local msgBox = mk("TextBox", {Position=UDim2.new(0, 0, 0, 100), Size=UDim2.new(1, 0, 0, 140), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Write your message...", ClearTextOnFocus=false, Text="", TextWrapped=true, TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextYAlignment.Top, MultiLine=true, Parent=body})
+				round(msgBox, 6)
+
+				local postBtn = mk("TextButton", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 0, 1, 0), Size=UDim2.new(0, 110, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Post Thread", AutoButtonColor=false, Parent=body})
+				round(postBtn, 6); hoverTween(postBtn)
+				postBtn.MouseButton1Click:Connect(function()
+					local title = tostring(titleBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+					local text = tostring(msgBox.Text or "")
+					if title == "" then
+						Lib:Notify({ Title = "Forum", Content = "Give your thread a title first." })
+						return
+					end
+					local id = tonumber(data.nextId) or (#data.threads + 1)
+					data.nextId = id + 1
+					data.threads[#data.threads + 1] = {
+						id = id,
+						title = title,
+						author = myName,
+						created = os.time(),
+						posts = { { author = myName, text = text, time = os.time() } }
+					}
+					forumSave(data)
+					state.view = "open"
+					state.threadId = id
+					render()
+				end)
+			else
+				local thIdx, th = findThread(state.threadId)
+				if not th then
+					state.view = "list"
+					render()
+					return
+				end
+
+				makeBackButton()
+				local delThreadBtn
+				if canDelete(th.author) then
+					delThreadBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, 0, 0, 0), Size=UDim2.new(0, 92, 0, 24), BackgroundColor3=theme.danger, BackgroundTransparency=0.55, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, Text="Delete", AutoButtonColor=false, Parent=body})
+					round(delThreadBtn, 6)
+					delThreadBtn.MouseButton1Click:Connect(function()
+						table.remove(data.threads, thIdx)
+						forumSave(data)
+						state.view = "list"
+						state.threadId = nil
+						render()
+					end)
+				end
+				mk("TextLabel", {Position=UDim2.new(0, 84, 0, 4), Size=UDim2.new(1, -190, 0, 18), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=13, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=tostring(th.title or "(untitled)"), Parent=body})
+				mk("TextLabel", {Position=UDim2.new(0, 84, 0, 22), Size=UDim2.new(1, -190, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=10, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.format("by %s · %s", tostring(th.author or "?"), fmtTime(th.created)), Parent=body})
+
+				local posts = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 44), Size=UDim2.new(1, 0, 1, -86), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=body})
+				mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=posts})
+
+				for i, post in ipairs(th.posts or {}) do
+					local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.windowBg, BorderSizePixel=0, Parent=posts})
+					round(row, 6); strk(row, theme.stroke, 0.4); pad(row, 8, 6, 8, 6)
+					mk("TextLabel", {Size=UDim2.new(1, -30, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text=string.format("%s · %s", tostring(post.author or "?"), fmtTime(post.time)), Parent=row})
+					mk("TextLabel", {Size=UDim2.new(1, -30, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(post.text or ""), LayoutOrder=1, Parent=row})
+					if canDelete(post.author) then
+						local delPostBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0), Position=UDim2.new(1, 0, 0, 0), Size=UDim2.new(0, 22, 0, 18), BackgroundColor3=theme.danger, BackgroundTransparency=0.55, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=10, TextColor3=theme.text, Text="X", AutoButtonColor=false, Parent=row})
+						round(delPostBtn, 5)
+						delPostBtn.MouseButton1Click:Connect(function()
+							table.remove(th.posts, i)
+							forumSave(data)
+							render()
+						end)
+					end
+				end
+
+				local replyBox = mk("TextBox", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 0, 1, 0), Size=UDim2.new(1, -116, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Write a reply...", ClearTextOnFocus=false, Text="", Parent=body})
+				round(replyBox, 6)
+				local replyBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 1), Position=UDim2.new(1, 0, 1, 0), Size=UDim2.new(0, 110, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Reply", AutoButtonColor=false, Parent=body})
+				round(replyBtn, 6); hoverTween(replyBtn)
+				replyBtn.MouseButton1Click:Connect(function()
+					local text = tostring(replyBox.Text or "")
+					if text:gsub("%s+", "") == "" then return end
+					th.posts = th.posts or {}
+					th.posts[#th.posts + 1] = { author = myName, text = text, time = os.time() }
+					forumSave(data)
+					render()
+				end)
+			end
+		end
+
+		render()
+		return card
+	end
+
+	local function makeConfigPanel(parent, cfg)
+		cfg = cfg or {}
+		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
+		round(card, 8); strk(card, theme.stroke, 0.5); pad(card, 10, 10, 10, 10)
+		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Config Manager"), Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="Save all current settings into named profiles (RiuuHub/configs). Loading a profile re-applies every toggle, slider, dropdown and input.", LayoutOrder=1, Parent=card})
+
+		local profilesDropdown
+		local function refreshProfiles()
+			if type(profilesDropdown) == "table" and type(profilesDropdown.SetOptions) == "function" then
+				profilesDropdown:SetOptions(configList())
+			end
+		end
+		local function selectedProfile()
+			local v = cfgGet("Config/Profiles", nil)
+			if type(v) == "string" and v ~= "" then return v end
+			if type(profilesDropdown) == "table" and type(profilesDropdown.Value) == "string" then
+				return profilesDropdown.Value
+			end
+			return ""
+		end
+
+		do
+			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=2, Parent=card})
+			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text="Config name", Parent=row})
+			local nameBox = mk("TextBox", {Size=UDim2.new(1, 0, 0, 26), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="my-config", ClearTextOnFocus=false, Text=tostring(cfgGet("Config/ProfileName", "") or ""), Parent=row})
+			round(nameBox, 6)
+			nameBox.FocusLost:Connect(function()
+				cfgSet("Config/ProfileName", nameBox.Text)
+			end)
+			local saveBtn = mk("TextButton", {Size=UDim2.new(0, 130, 0, 28), BackgroundColor3=theme.success, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Save Config", AutoButtonColor=false, LayoutOrder=1, Parent=row})
+			round(saveBtn, 6); hoverTween(saveBtn)
+			saveBtn.MouseButton1Click:Connect(function()
+				local ok, res = configSave(nameBox.Text)
+				Lib:Notify({ Title = "Config", Content = ok and ("Saved config: " .. tostring(res)) or tostring(res) })
+				if ok then refreshProfiles() end
+			end)
+		end
+
+		do
+			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=3, Parent=card})
+			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
+			profilesDropdown = makeDropdown(row, {
+				Title = "Profiles",
+				Options = configList(),
+				Multi = false,
+				Callback = function(value)
+					if type(value) == "string" and value ~= "" then
+						cfgSet("Config/Profiles", value)
+					end
+				end
+			}, "Config")
+			local btnRow = mk("Frame", {Size=UDim2.new(1, 0, 0, 28), BackgroundTransparency=1, LayoutOrder=1, Parent=row})
+			mk("UIListLayout", {Padding=UDim.new(0, 6), FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Parent=btnRow})
+			local loadBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Load", AutoButtonColor=false, Parent=btnRow})
+			round(loadBtn, 6); hoverTween(loadBtn)
+			loadBtn.MouseButton1Click:Connect(function()
+				local name = selectedProfile()
+				if name == "" then
+					Lib:Notify({ Title = "Config", Content = "Select a profile first." })
+					return
+				end
+				local ok, res = configLoad(name)
+				Lib:Notify({ Title = "Config", Content = ok and ("Loaded config: " .. tostring(res)) or tostring(res) })
+			end)
+			local delBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.danger, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Delete", AutoButtonColor=false, Parent=btnRow})
+			round(delBtn, 6); hoverTween(delBtn)
+			delBtn.MouseButton1Click:Connect(function()
+				local name = selectedProfile()
+				if name == "" then
+					Lib:Notify({ Title = "Config", Content = "Select a profile first." })
+					return
+				end
+				configDelete(name)
+				cfgSet("Config/Profiles", "")
+				refreshProfiles()
+				Lib:Notify({ Title = "Config", Content = "Deleted config: " .. name })
+			end)
+			local refBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.subtext, Text="Refresh", AutoButtonColor=false, Parent=btnRow})
+			round(refBtn, 6); strk(refBtn, theme.stroke, 0.5); hoverTween(refBtn)
+			refBtn.MouseButton1Click:Connect(refreshProfiles)
+		end
+
+		local autoCtrl = makeToggle(card, {
+			Title = "Auto Load Selected Config",
+			Content = "Automatically applies the selected profile every time the hub loads.",
+			Default = cfgGet("Config/AutoLoad", false) == true,
+			Callback = function(v)
+				cfgSet("Config/AutoLoad", v == true)
+			end
+		}, "Config")
+		if type(autoCtrl) == "table" and autoCtrl.Frame then
+			autoCtrl.Frame.LayoutOrder = 4
+		end
+
+		return card
+	end
 	-- ==== Section ====
 	local function makeSection(page, name, keyPrefix)
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=page})
@@ -365,9 +914,9 @@ end
 		function section:AddButton(cfg) return makeButton(content, cfg) end
 		function section:AddParagraph(cfg) return makeParagraph(content, cfg) end
 		function section:AddActionList(cfg) return makeActionList(content, cfg) end
-		function section:AddLiveChat(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Live Chat", Content="Live chat is not available in this build."}) end
-		function section:AddForum(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Forum", Content="Forum is not available in this build."}) end
-		function section:AddConfigPanel(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Config", Content="Config panel uses settings.json in RiuuHub folder."}) end
+		function section:AddLiveChat(cfg) return makeLiveChat(content, cfg) end
+		function section:AddForum(cfg) return makeForum(content, cfg) end
+		function section:AddConfigPanel(cfg) return makeConfigPanel(content, cfg) end
 		function section:AddAdminPanel(cfg) cfg = cfg or {}; self:AddParagraph({Title=cfg.Title or "Admin Panel", Content="Admin features are owner-only."}) end
 		function section:AddSupportCard()
 			local panel = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=content})
@@ -448,6 +997,24 @@ end
 				other.Dot.BackgroundTransparency = (other == t) and 0 or 1
 				other.Label.Font = (other == t) and Enum.Font.GothamBold or Enum.Font.GothamSemibold
 			end
+		end
+		function win:BindConfigTable(t)
+			Lib._configTable = (type(t) == "table") and t or nil
+		end
+		function win:ApplyAutoLoadConfig()
+			if cfgGet("Config/AutoLoad", false) ~= true then return end
+			local name = cfgGet("Config/Profiles", nil)
+			if type(name) ~= "string" or name == "" then return end
+			local ok, res = configLoad(name)
+			if ok then
+				Lib:Notify({ Title = "Config", Content = "Auto-loaded config: " .. name })
+			end
+		end
+		function win:AddForum(fcfg)
+			fcfg = fcfg or {}
+			local ftab = self:AddTab({ Name = tostring(fcfg.Name or "Forum"), Icon = fcfg.Icon })
+			ftab:AddSection(tostring(fcfg.Section or "Community Forum"), true):AddForum({ Title = tostring(fcfg.Section or "Community Forum") })
+			return ftab
 		end
 		do
 			local dragging, dragStart, startPos = false, nil, nil
@@ -18213,34 +18780,28 @@ local t103 = {
 }
 
 local function v2528()
+	local autoexecSnippet = "repeat task.wait(0.5) until game:IsLoaded()\ntask.wait(1.5)\nif getgenv then getgenv().SNE_AutoExecute = true end\n"
+
+	if tostring(RIUU_SCRIPT_URL) ~= "" then
+		autoexecSnippet = autoexecSnippet .. 'loadstring(game:HttpGet("' .. tostring(RIUU_SCRIPT_URL) .. '"))()\n'
+	end
+
 	pcall(function()
 		if writefile then
 			pcall(function()
-				writefile("autoexec/Sena_StealAnEgg.lua", [[repeat task.wait(0.5) until game:IsLoaded()
-task.wait(1.5)
-if getgenv then getgenv().SNE_AutoExecute = true end
-nil
-]])
+				writefile("autoexec/Riuu_StealAnEgg.lua", autoexecSnippet)
 			end)
 			pcall(function()
-				writefile("autoexecute/Sena_StealAnEgg.lua", [[repeat task.wait(0.5) until game:IsLoaded()
-task.wait(1.5)
-if getgenv then getgenv().SNE_AutoExecute = true end
-nil
-]])
+				writefile("autoexecute/Riuu_StealAnEgg.lua", autoexecSnippet)
 			end)
 		end
 	end)
 
 	local queue_on_teleport_ = queue_on_teleport or syn and syn.queue_on_teleport or fluxus and fluxus.queue_on_teleport
 
-	if queue_on_teleport_ then
+	if queue_on_teleport_ and tostring(RIUU_SCRIPT_URL) ~= "" then
 		pcall(function()
-			queue_on_teleport_([[repeat task.wait(0.5) until game:IsLoaded()
-task.wait(1.5)
-if getgenv then getgenv().SNE_AutoExecute = true end
-nil
-]])
+			queue_on_teleport_(autoexecSnippet)
 		end)
 	end
 end
@@ -18248,17 +18809,17 @@ local function v2530()
 	pcall(function()
 		if delfile then
 			pcall(function()
-				delfile("autoexec/Sena_StealAnEgg.lua")
+				delfile("autoexec/Riuu_StealAnEgg.lua")
 			end)
 			pcall(function()
-				delfile("autoexecute/Sena_StealAnEgg.lua")
+				delfile("autoexecute/Riuu_StealAnEgg.lua")
 			end)
 		elseif writefile then
 			pcall(function()
-				writefile("autoexec/Sena_StealAnEgg.lua", "")
+				writefile("autoexec/Riuu_StealAnEgg.lua", "")
 			end)
 			pcall(function()
-				writefile("autoexecute/Sena_StealAnEgg.lua", "")
+				writefile("autoexecute/Riuu_StealAnEgg.lua", "")
 			end)
 		end
 	end)
@@ -30161,6 +30722,9 @@ do
 				Image = ""
 			})
 			v4779(v4742)
+			pcall(function()
+				v4742:BindConfigTable(senaV4Config)
+			end)
 			t216 = {}
 			t217 = { "Respawn Point" }
 
@@ -31602,6 +32166,17 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 		end
 
 		do
+			local configTab = v4742:AddTab({
+				Name = "Config",
+				Icon = "settings"
+			})
+
+			configTab:AddSection("Config Manager", true):AddConfigPanel({
+				Title = "Config Manager"
+			})
+		end
+
+		do
 			local __SenaV4Visual = genv.__SenaV4Visual
 			local v4885 = v4742:AddTab({
 				Name = "Visual",
@@ -31986,6 +32561,20 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 			end)
 			v4904(t216.autoSteal, v4526)
 			v4904(t216.stealPlayers, v4734)
+			v4904(t216.adminBoost, v4750)
+			v4904(t216.boostFps, v4719)
+			v4904(t216.scrambleTradeInTrade, function(p1123)
+				senaV4Config.ScrambleTradeInTrade = p1123 == true
+			end)
+			v4904(t216.scrambleTradeInReroll, function(p1124)
+				senaV4Config.ScrambleTradeInReroll = p1124 == true
+			end)
+			v4904(t216.scrambleTradeInBanners, function(p1125)
+				senaV4Config.ScrambleTradeInBanners = type(p1125) == "table" and p1125 or {}
+			end)
+			v4904(t216.scrambleBossAuto, function(p1126)
+				senaV4Config.ScrambleBossAuto = p1126 == true
+			end)
 		end
 
 		do
@@ -32017,6 +32606,10 @@ Missing: %s]], __SenaV4ScrambleTradeIn.banner, __SenaV4ScrambleTradeIn.status, m
 				end
 			end
 		end
+
+		pcall(function()
+			v4742:ApplyAutoLoadConfig()
+		end)
 	end
 
 	v4315()
