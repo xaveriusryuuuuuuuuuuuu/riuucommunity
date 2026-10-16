@@ -1,4 +1,4 @@
-﻿-- ==== Riuu branding & owner ====
+-- ==== Riuu branding & owner ====
 local RIUU_OWNER = "28cellotzy"
 local RIUU_DISCORD = "Xaverius Putra N."
 local RIUU_SCRIPT_URL = "https://raw.githubusercontent.com/xaveriusryuuuuuuuuuuuu/riuucommunity/refs/heads/main/Riuu-Steal-An-Egg.lua" -- fill with the raw URL of this script to enable auto re-execute after teleport
