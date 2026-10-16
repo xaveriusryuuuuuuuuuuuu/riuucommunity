@@ -138,8 +138,7 @@ end
 	local function makeToggle(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "toggle")
-		local saved = cfgGet(key, nil)
-		local value = (saved ~= nil) and (saved == true) or (cfg.Default == true)
+		local value = cfg.Default == true
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 10, 9, 10, 9)
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
@@ -151,7 +150,7 @@ end
 		round(switch, 11)
 		local knob = mk("Frame", {AnchorPoint=Vector2.new(0, 0.5), Position=UDim2.new(0, value and 21 or 3, 0.5, 0), Size=UDim2.new(0, 16, 0, 16), BackgroundColor3=theme.text, BorderSizePixel=0, ZIndex=3, Parent=switch})
 		round(knob, 8)
-		local ctrl = {Value=value}
+		local ctrl = {Value=value, Default=cfg.Default == true}
 		function ctrl:SetValue(v, fire)
 			value = v == true; ctrl.Value = value
 			switch.BackgroundColor3 = value and theme.accent or Color3.fromRGB(45, 45, 55)
@@ -159,19 +158,17 @@ end
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
 		ctrl.Frame = card
-		switch.MouseButton1Click:Connect(function() ctrl:SetValue(not value, true); cfgSet(key, value) end)
+		switch.MouseButton1Click:Connect(function() ctrl:SetValue(not value, true) end)
 		Lib._controls[key] = ctrl
 		return ctrl
 	end
 	local function makeSlider(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "slider")
-		local saved = cfgGet(key, nil)
 		local default = tonumber(cfg.Default) or tonumber(cfg.Min) or 0
 		local minv = tonumber(cfg.Min) or 0
 		local maxv = tonumber(cfg.Max) or 100
-		local value = (type(saved) == "number") and saved or default
-		value = math.clamp(value, minv, maxv)
+		local value = math.clamp(default, minv, maxv)
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 10, 9, 10, 9)
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
@@ -184,7 +181,7 @@ end
 		local fill = mk("Frame", {Size=UDim2.new((value - minv) / math.max(maxv - minv, 1), 0, 1, 0), BackgroundColor3=theme.accent, BorderSizePixel=0, Parent=bar})
 		round(fill, 4)
 		local valLbl = mk("TextLabel", {Size=UDim2.new(0, 40, 0, 14), Position=UDim2.new(1, -42, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, Text=tostring(math.floor(value)), Parent=card})
-		local ctrl = {Value=value}
+		local ctrl = {Value=value, Default=value}
 		function ctrl:SetValue(v, fire)
 			value = math.clamp(tonumber(v) or value, minv, maxv); ctrl.Value = value
 			fill.Size = UDim2.new((value - minv) / math.max(maxv - minv, 1), 0, 1, 0)
@@ -207,15 +204,14 @@ end
 				end
 			end
 		end)
-		UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false; cfgSet(key, value) end end)
+		UIS.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
 		Lib._controls[key] = ctrl
 		return ctrl
 	end
 	local function makeInput(parent, cfg, keyPrefix)
 		cfg = cfg or {}
 		local key = keyPrefix .. "/" .. tostring(cfg.Flag or cfg.Title or "input")
-		local saved = cfgGet(key, nil)
-		local value = type(saved) == "string" and saved or (cfg.Default or "")
+		local value = tostring(cfg.Default or "")
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 10, 9, 10, 9)
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
@@ -226,12 +222,12 @@ end
 		local box = mk("TextBox", {Size=UDim2.new(1, -10, 0, 26), Position=UDim2.new(0, 5, 0, 22), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, Text=value, PlaceholderText=tostring(cfg.Placeholder or ""), ClearTextOnFocus=false, Parent=card})
 		round(box, 6)
 		box.FocusLost:Connect(function()
-			value = box.Text; cfgSet(key, value)
+			value = box.Text
 			if type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end)
-		local ctrl = {Value=value}
+		local ctrl = {Value=value, Default=tostring(cfg.Default or "")}
 		function ctrl:SetValue(v, fire)
-			value = tostring(v or ""); box.Text = value; cfgSet(key, value)
+			value = tostring(v or ""); box.Text = value
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
 		Lib._controls[key] = ctrl
@@ -292,14 +288,12 @@ end
 		local multi = cfg.Multi == true
 		local options = type(cfg.Options) == "table" and cfg.Options or {}
 		local maxVisible = math.max(tonumber(cfg.MaxVisible) or 6, 1)
-		local saved = cfgGet(key, nil)
 		local value
 		if multi then
 			value = {}
-			if type(saved) == "table" then for _, v in ipairs(saved) do value[#value+1] = v end
-			elseif type(cfg.Default) == "table" then for _, v in ipairs(cfg.Default) do value[#value+1] = v end end
+			if type(cfg.Default) == "table" then for _, v in ipairs(cfg.Default) do value[#value+1] = v end end
 		else
-			value = (type(saved) == "string") and saved or (type(cfg.Default) == "string" and cfg.Default or "")
+			value = type(cfg.Default) == "string" and cfg.Default or ""
 		end
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 10, 9, 10, 9)
@@ -328,17 +322,22 @@ end
 						value = opt; open = false; listFrame.Visible = false
 					end
 					btn.Text = multi and (table.concat(value, ", ") or "") or value
-					cfgSet(key, value)
 					if type(cfg.Callback) == "function" then cfg.Callback(value) end
 				end)
 			end
 		end
 		btn.MouseButton1Click:Connect(function() open = not open; listFrame.Visible = open; if open then rebuild() end end)
 		local ctrl = {Value=value}
+		if multi then
+			local d = {}
+			for _, v in ipairs(value) do d[#d+1] = v end
+			ctrl.Default = d
+		else
+			ctrl.Default = value
+		end
 		function ctrl:SetValue(v, fire)
 			if multi then value = type(v) == "table" and v or {} else value = tostring(v or "") end
 			btn.Text = multi and (table.concat(value, ", ") or "") or value
-			cfgSet(key, value)
 			if fire and type(cfg.Callback) == "function" then cfg.Callback(value) end
 		end
 		function ctrl:Refresh(opts)
@@ -562,24 +561,151 @@ end
 
 	local function makeLiveChat(parent, cfg)
 		cfg = cfg or {}
-		local height = math.clamp(tonumber(cfg.Height) or 300, 140, 560)
+		local height = math.clamp(tonumber(cfg.Height) or 330, 240, 560)
+		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "You"
 
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, height), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 8, 8, 8, 8)
-		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 16), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg.Title or "Live Chat"), Parent=card})
 
-		local list = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 22), Size=UDim2.new(1, 0, 1, -60), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=card})
+		local state = { room = "General", on = true, hidden = false }
+		local messages = {}
+		local msgSeq = 0
+		local lastKey, lastTime = nil, 0
+
+		local roomNames = {"General", "Indonesian", "Philippines", "Vietnam", "Brazilian"}
+		local langWords = {
+			Indonesian = {"gua ", "gue ", " lo ", " lu ", "kamu", "banget", "gak", "nggak", "kok ", "nih ", "tuh ", "udah", "aja", "bang ", "kak ", "sini", "kenapa", "gimana", "bener", "mantap", "saya", "yg ", "dgn", "wkwk"},
+			Philippines = {"ako", "ikaw", "naman", "kayo", "salamat", "sige", "kainis", "grabe", "dito", "idol", "lods", " pre ", " tol ", "sana", "haha"},
+			Vietnamese = {"khong", "không", "bạn", " gi ", "vậy", "nhé", "nha ", "vay", "cam on", "ơn", "dkm", "vcl"},
+			Brazilian = {"vc ", "voce", "você", "obrigado", "obrigada", "mano", "legal", "não", "nao ", "kkk", "tmj", "bom dia", "sim "}
+		}
+
+		local function detectRooms(text)
+			local low = " " .. string.lower(tostring(text)):gsub("%s+", " ") .. " "
+			local found = {}
+			for room, words in pairs(langWords) do
+				for _, w in ipairs(words) do
+					if string.find(low, w, 1, true) then
+						found[room] = true
+						break
+					end
+				end
+			end
+			return found
+		end
+
+		local header = mk("Frame", {Size=UDim2.new(1, 0, 0, 24), BackgroundTransparency=1, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(0, 120, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg.Title or "Live Chat"), Parent=header})
+		local chips = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, 0, 0.5, 0), Size=UDim2.new(0, 340, 1, 0), BackgroundTransparency=1, Parent=header})
+		mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, HorizontalAlignment=Enum.HorizontalAlignment.Right, VerticalAlignment=Enum.VerticalAlignment.Center, Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=chips})
+		local function chip(text, color)
+			local c = mk("TextButton", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 0, 20), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Font=Enum.Font.GothamSemibold, TextSize=10, TextColor3=color or theme.subtext, Text=text, AutoButtonColor=false, Parent=chips})
+			round(c, 10); pad(c, 8, 0, 8, 0)
+			return c
+		end
+		local onlineChip = chip("", theme.success)
+		local hiddenChip = chip("Hidden", theme.subtext)
+		local onChip = chip("Chat On", theme.success)
+
+		local roomBar = mk("Frame", {Position=UDim2.new(0, 0, 0, 28), Size=UDim2.new(1, 0, 0, 26), BackgroundTransparency=1, Parent=card})
+		mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=roomBar})
+		local roomButtons = {}
+		local renderRoom
+		for idx, roomName in ipairs(roomNames) do
+			local rb = mk("TextButton", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 1, 0), BackgroundTransparency=1, BorderSizePixel=0, Font=Enum.Font.GothamSemibold, TextSize=11, TextColor3=theme.subtext, Text=roomName, AutoButtonColor=false, LayoutOrder=idx, Parent=roomBar})
+			round(rb, 10); pad(rb, 10, 0, 10, 0)
+			roomButtons[roomName] = rb
+			rb.MouseButton1Click:Connect(function()
+				state.room = roomName
+				renderRoom()
+			end)
+		end
+
+		local list = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 58), Size=UDim2.new(1, 0, 1, -96), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=card})
 		round(list, 6); pad(list, 6, 6, 6, 6)
 		mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=list})
+		local noteLbl = mk("TextLabel", {Position=UDim2.new(0, 0, 0, 58), Size=UDim2.new(1, 0, 1, -96), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextWrapped=true, Text="", Visible=false, Parent=card})
 
-		local box = mk("TextBox", {Position=UDim2.new(0, 0, 1, -30), Size=UDim2.new(1, -74, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Type a message...", ClearTextOnFocus=false, Text="", Parent=card})
-		round(box, 6)
-		local sendBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 1), Position=UDim2.new(1, 0, 1, -30), Size=UDim2.new(0, 66, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Send", AutoButtonColor=false, Parent=card})
-		round(sendBtn, 6); hoverTween(sendBtn)
+		local function scrollBottom()
+			task.defer(function()
+				pcall(function()
+					list.CanvasPosition = Vector2.new(0, math.max(list.AbsoluteCanvasSize.Y, 0))
+				end)
+			end)
+		end
 
-		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "You"
-		local history = {}
-		local lastKey, lastTime = nil, 0
+		local function makeRow(m, order)
+			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, LayoutOrder=order, Text=string.format('<font color="%s"><b>%s:</b></font> %s', m.author == myName and "#5865f2" or "#a0a5af", escapeRich(m.author), escapeRich(m.text)), Parent=list})
+		end
+
+		function renderRoom()
+			for _, c in ipairs(list:GetChildren()) do
+				if c:IsA("TextLabel") then c:Destroy() end
+			end
+			if not state.on then
+				list.Visible = false; noteLbl.Visible = true; noteLbl.Text = "Chat is turned off. Press the Chat chip to enable mirroring."
+				return
+			end
+			if state.hidden then
+				list.Visible = false; noteLbl.Visible = true; noteLbl.Text = "Chat hidden. Press the Hidden chip to show messages again."
+				return
+			end
+			list.Visible = true; noteLbl.Visible = false
+			local n = 0
+			local start = math.max(1, #messages - 59)
+			for i = start, #messages do
+				local m = messages[i]
+				if state.room == "General" or (m.rooms and m.rooms[state.room]) then
+					n = n + 1
+					makeRow(m, n)
+				end
+			end
+			if n == 0 then
+				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=state.room == "General" and "No messages yet — say hi!" or ("No messages detected for this room yet."), Parent=list})
+			end
+			scrollBottom()
+		end
+
+		local function updateRoomButtons()
+			for roomName, rb in pairs(roomButtons) do
+				local on = (roomName == state.room)
+				rb.TextColor3 = on and theme.text or theme.subtext
+				rb.BackgroundColor3 = theme.accent
+				rb.BackgroundTransparency = on and 0.84 or 1
+				rb.Font = on and Enum.Font.GothamBold or Enum.Font.GothamSemibold
+			end
+		end
+
+		local function updateChips()
+			onChip.Text = state.on and "Chat On" or "Chat Off"
+			onChip.TextColor3 = state.on and theme.success or theme.danger
+			hiddenChip.TextColor3 = state.hidden and theme.warn or theme.subtext
+			onlineChip.Text = string.format("%d in server", #Players:GetPlayers())
+		end
+
+		onChip.MouseButton1Click:Connect(function()
+			state.on = not state.on
+			updateChips()
+			renderRoom()
+		end)
+		hiddenChip.MouseButton1Click:Connect(function()
+			state.hidden = not state.hidden
+			updateChips()
+			renderRoom()
+		end)
+
+		local function appendRow(m)
+			makeRow(m, msgSeq)
+			local first, count = nil, 0
+			for _, c in ipairs(list:GetChildren()) do
+				if c:IsA("TextLabel") then
+					count = count + 1
+					if first == nil or c.LayoutOrder < first.LayoutOrder then first = c end
+				end
+			end
+			if count > 60 and first then first:Destroy() end
+			scrollBottom()
+		end
 
 		local function addMessage(author, text)
 			author = tostring(author or "?")
@@ -589,20 +715,18 @@ end
 			local now = os.clock()
 			if key == lastKey and now - lastTime < 1.5 then return end
 			lastKey, lastTime = key, now
-
-			local row = mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=string.format('<font color="%s"><b>%s:</b></font> %s', author == myName and "#5865f2" or "#a0a5af", escapeRich(author), escapeRich(text)), LayoutOrder=#history + 1, Parent=list})
-			history[#history + 1] = row
-			if #history > 60 then
-				local old = table.remove(history, 1)
-				pcall(function() old:Destroy() end)
+			if not state.on then return end
+			msgSeq = msgSeq + 1
+			local m = { author = author, text = text, rooms = detectRooms(text), seq = msgSeq }
+			messages[#messages + 1] = m
+			if #messages > 240 then table.remove(messages, 1) end
+			if state.hidden then return end
+			if state.room == "General" or m.rooms[state.room] then
+				appendRow(m)
 			end
-			task.defer(function()
-				pcall(function()
-					list.CanvasPosition = Vector2.new(0, math.max(list.AbsoluteCanvasSize.Y, 0))
-				end)
-			end)
 		end
 
+		local box
 		local function sendCurrent()
 			local text = box.Text
 			if type(text) ~= "string" or text:gsub("%s+", "") == "" then return end
@@ -628,6 +752,11 @@ end
 				end
 			end)
 		end
+
+		box = mk("TextBox", {Position=UDim2.new(0, 0, 1, -30), Size=UDim2.new(1, -74, 0, 28), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Message in #general...", ClearTextOnFocus=false, Text="", Parent=card})
+		round(box, 6)
+		local sendBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 1), Position=UDim2.new(1, 0, 1, -30), Size=UDim2.new(0, 66, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Send", AutoButtonColor=false, Parent=card})
+		round(sendBtn, 6); hoverTween(sendBtn)
 		sendBtn.MouseButton1Click:Connect(sendCurrent)
 		box.FocusLost:Connect(function(enter)
 			if enter then sendCurrent() end
@@ -656,7 +785,14 @@ end
 				end
 				Players.PlayerAdded:Connect(hook)
 			end)
-			addMessage("Riuu", "Live chat mirrors this server's chat. Type below to send a message.")
+			pcall(function()
+				Players.PlayerAdded:Connect(function() updateChips() end)
+				Players.PlayerRemoving:Connect(function() updateChips() end)
+			end)
+			addMessage("Riuu", "Welcome to Riuu Live Chat. General mirrors this server's in-game chat; the other rooms group messages by detected language.")
+			updateChips()
+			updateRoomButtons()
+			renderRoom()
 		end)
 
 		return card
@@ -864,12 +1000,21 @@ end
 		round(card, 8); pad(card, 10, 9, 10, 9)
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
 		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Title or "Config Manager"), Parent=card})
-		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="Save all current settings into named profiles (RiuuHub/configs). Loading a profile re-applies every toggle, slider, dropdown and input.", LayoutOrder=1, Parent=card})
 
 		local profilesDropdown
-		local function refreshProfiles()
-			if type(profilesDropdown) == "table" and type(profilesDropdown.SetOptions) == "function" then
-				profilesDropdown:SetOptions(configList())
+		local lastSaved = tostring(cfgGet("Config/ProfileName", "") or "")
+		if lastSaved == "" then lastSaved = "None" end
+		local function autoLoadName()
+			if cfgGet("Config/AutoLoad", false) == true then
+				local n = cfgGet("Config/Profiles", nil)
+				if type(n) == "string" and n ~= "" then return n end
+			end
+			return "None"
+		end
+		local statusHandle
+		local function updateStatus()
+			if type(statusHandle) == "table" and type(statusHandle.SetText) == "function" then
+				statusHandle:SetText(string.format("Save: %s  ·  Auto Load: %s", lastSaved, autoLoadName()))
 			end
 		end
 		local function selectedProfile()
@@ -880,81 +1025,213 @@ end
 			end
 			return ""
 		end
-
-		do
-			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=2, Parent=card})
-			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
-			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text="Config name", Parent=row})
-			local nameBox = mk("TextBox", {Size=UDim2.new(1, 0, 0, 26), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="my-config", ClearTextOnFocus=false, Text=tostring(cfgGet("Config/ProfileName", "") or ""), Parent=row})
-			round(nameBox, 6)
-			nameBox.FocusLost:Connect(function()
-				cfgSet("Config/ProfileName", nameBox.Text)
-			end)
-			local saveBtn = mk("TextButton", {Size=UDim2.new(0, 130, 0, 28), BackgroundColor3=theme.success, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Save Config", AutoButtonColor=false, LayoutOrder=1, Parent=row})
-			round(saveBtn, 6); hoverTween(saveBtn)
-			saveBtn.MouseButton1Click:Connect(function()
-				local ok, res = configSave(nameBox.Text)
-				Lib:Notify({ Title = "Config", Content = ok and ("Saved config: " .. tostring(res)) or tostring(res) })
-				if ok then refreshProfiles() end
-			end)
+		local function refreshProfiles()
+			if type(profilesDropdown) == "table" and type(profilesDropdown.SetOptions) == "function" then
+				profilesDropdown:SetOptions(configList())
+			end
 		end
 
-		do
-			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=3, Parent=card})
-			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
-			profilesDropdown = makeDropdown(row, {
-				Title = "Profiles",
-				Options = configList(),
-				Multi = false,
-				Callback = function(value)
-					if type(value) == "string" and value ~= "" then
-						cfgSet("Config/Profiles", value)
-					end
-				end
-			}, "Config")
-			local btnRow = mk("Frame", {Size=UDim2.new(1, 0, 0, 28), BackgroundTransparency=1, LayoutOrder=1, Parent=row})
-			mk("UIListLayout", {Padding=UDim.new(0, 6), FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Parent=btnRow})
-			local loadBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Load", AutoButtonColor=false, Parent=btnRow})
-			round(loadBtn, 6); hoverTween(loadBtn)
-			loadBtn.MouseButton1Click:Connect(function()
-				local name = selectedProfile()
-				if name == "" then
-					Lib:Notify({ Title = "Config", Content = "Select a profile first." })
-					return
-				end
-				local ok, res = configLoad(name)
-				Lib:Notify({ Title = "Config", Content = ok and ("Loaded config: " .. tostring(res)) or tostring(res) })
-			end)
-			local delBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.danger, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Delete", AutoButtonColor=false, Parent=btnRow})
-			round(delBtn, 6); hoverTween(delBtn)
-			delBtn.MouseButton1Click:Connect(function()
-				local name = selectedProfile()
-				if name == "" then
-					Lib:Notify({ Title = "Config", Content = "Select a profile first." })
-					return
-				end
-				configDelete(name)
-				cfgSet("Config/Profiles", "")
-				refreshProfiles()
-				Lib:Notify({ Title = "Config", Content = "Deleted config: " .. name })
-			end)
-			local refBtn = mk("TextButton", {Size=UDim2.new(0, 110, 1, 0), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.subtext, Text="Refresh", AutoButtonColor=false, Parent=btnRow})
-			round(refBtn, 6); strk(refBtn, theme.stroke, 0.5); hoverTween(refBtn)
-			refBtn.MouseButton1Click:Connect(refreshProfiles)
+		statusHandle = makeParagraph(card, {
+			Title = "Status",
+			Content = string.format("Save: %s  ·  Auto Load: %s", lastSaved, autoLoadName())
+		})
+		if type(statusHandle) == "table" and statusHandle.Frame then statusHandle.Frame.LayoutOrder = 1 end
+
+		local function label(text, order)
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.upper(tostring(text)), LayoutOrder=order, Parent=card})
+		end
+		local function buttonRow(order, aText, aColor, bText, bColor)
+			local row = mk("Frame", {Size=UDim2.new(1, 0, 0, 30), BackgroundTransparency=1, LayoutOrder=order, Parent=card})
+			mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0, 8), SortOrder=Enum.SortOrder.LayoutOrder, Parent=row})
+			local function btn(text, color)
+				local bb = mk("TextButton", {Size=UDim2.new(0.5, -4, 1, 0), BackgroundColor3=color, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text=text, AutoButtonColor=false, Parent=row})
+				round(bb, 6); hoverTween(bb)
+				return bb
+			end
+			return btn(aText, aColor), btn(bText, bColor)
+		end
+		local function wideButton(order, text, color)
+			local bb = mk("TextButton", {Size=UDim2.new(1, 0, 0, 30), BackgroundColor3=color, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text=text, AutoButtonColor=false, LayoutOrder=order, Parent=card})
+			round(bb, 6); hoverTween(bb)
+			return bb
 		end
 
-		local autoCtrl = makeToggle(card, {
-			Title = "Auto Load Selected Config",
-			Content = "Automatically applies the selected profile every time the hub loads.",
-			Default = cfgGet("Config/AutoLoad", false) == true,
+		label("Config Name", 2)
+		local nameCtrl = makeInput(card, {
+			Title = "",
+			Placeholder = "Write config name here",
+			Default = tostring(cfgGet("Config/ProfileName", "") or ""),
 			Callback = function(v)
-				cfgSet("Config/AutoLoad", v == true)
+				cfgSet("Config/ProfileName", tostring(v or ""))
 			end
 		}, "Config")
-		if type(autoCtrl) == "table" and autoCtrl.Frame then
-			autoCtrl.Frame.LayoutOrder = 4
+		local nameBox
+		do
+			local tb = nameCtrl.Frame and nameCtrl.Frame:FindFirstChildOfClass("TextBox")
+			nameBox = tb
 		end
+		if type(nameCtrl) == "table" and nameCtrl.Frame then nameCtrl.Frame.LayoutOrder = 3 end
 
+		label("Select Config", 4)
+		profilesDropdown = makeDropdown(card, {
+			Title = "",
+			Options = configList(),
+			Multi = false,
+			Callback = function(value)
+				if type(value) == "string" and value ~= "" then
+					cfgSet("Config/Profiles", value)
+				end
+			end
+		}, "Config")
+		if type(profilesDropdown) == "table" and profilesDropdown.Frame then profilesDropdown.Frame.LayoutOrder = 5 end
+
+		local saveBtn, loadBtn = buttonRow(6, "Save Config", theme.success, "Load Config", theme.accent)
+		saveBtn.MouseButton1Click:Connect(function()
+			local ok, res = configSave(nameBox and nameBox.Text or "")
+			Lib:Notify({ Title = "Config", Content = ok and ("Saved config: " .. tostring(res)) or tostring(res) })
+			if ok then
+				lastSaved = tostring(res)
+				cfgSet("Config/ProfileName", tostring(res))
+				refreshProfiles()
+				updateStatus()
+			end
+		end)
+		loadBtn.MouseButton1Click:Connect(function()
+			local name = selectedProfile()
+			if name == "" then
+				Lib:Notify({ Title = "Config", Content = "Select a config first." })
+				return
+			end
+			local ok, res = configLoad(name)
+			Lib:Notify({ Title = "Config", Content = ok and ("Loaded config: " .. tostring(res)) or tostring(res) })
+		end)
+
+		local delBtn, overBtn = buttonRow(7, "Delete Config", theme.danger, "Override Config", theme.warn)
+		delBtn.MouseButton1Click:Connect(function()
+			local name = selectedProfile()
+			if name == "" then
+				Lib:Notify({ Title = "Config", Content = "Select a config first." })
+				return
+			end
+			configDelete(name)
+			cfgSet("Config/Profiles", "")
+			refreshProfiles()
+			Lib:Notify({ Title = "Config", Content = "Deleted config: " .. name })
+		end)
+		overBtn.MouseButton1Click:Connect(function()
+			local name = selectedProfile()
+			if name == "" then
+				Lib:Notify({ Title = "Config", Content = "Select a config first." })
+				return
+			end
+			local ok, res = configSave(name)
+			Lib:Notify({ Title = "Config", Content = ok and ("Overrode config: " .. tostring(res)) or tostring(res) })
+			if ok then
+				lastSaved = tostring(res)
+				updateStatus()
+			end
+		end)
+
+		label("Auto-Load Configuration", 8)
+		local setBtn, clearBtn = buttonRow(9, "Set Auto Load", theme.success, "Clear Auto Load", Color3.fromRGB(45, 45, 55))
+		setBtn.MouseButton1Click:Connect(function()
+			local name = selectedProfile()
+			if name == "" then
+				Lib:Notify({ Title = "Config", Content = "Select a config first." })
+				return
+			end
+			cfgSet("Config/Profiles", name)
+			cfgSet("Config/AutoLoad", true)
+			updateStatus()
+			Lib:Notify({ Title = "Config", Content = "Auto Load set to: " .. name })
+		end)
+		clearBtn.MouseButton1Click:Connect(function()
+			cfgSet("Config/AutoLoad", false)
+			updateStatus()
+			Lib:Notify({ Title = "Config", Content = "Auto Load cleared." })
+		end)
+
+		label("Folder Management", 10)
+		local exportBtn = wideButton(11, "Export Config (copy JSON to clipboard)", theme.accent)
+		exportBtn.MouseButton1Click:Connect(function()
+			local name = selectedProfile()
+			if name == "" then name = (nameBox and nameBox.Text ~= "" and nameBox.Text or "export") end
+			local profile = {
+				Name = name,
+				SavedAt = os.time(),
+				SavedBy = (Players.LocalPlayer and Players.LocalPlayer.Name) or "",
+				Ui = sanitizeForJson(cfg),
+				Sena = type(Lib._configTable) == "table" and sanitizeForJson(Lib._configTable) or nil
+			}
+			local json = HttpService:JSONEncode(profile)
+			local ok = pcall(function() setclipboard(json) end)
+			if ok then
+				Lib:Notify({ Title = "Config", Content = "Config JSON copied to clipboard (" .. name .. ")." })
+			else
+				Lib:Notify({ Title = "Config", Content = "This executor has no setclipboard support." })
+			end
+		end)
+
+		label("External Config", 12)
+		local importBox = mk("TextBox", {Size=UDim2.new(1, 0, 0, 64), BackgroundColor3=Color3.fromRGB(15, 15, 20), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Paste raw JSON config here", ClearTextOnFocus=false, Text="", TextWrapped=true, TextXAlignment=Enum.TextXAlignment.Left, TextYAlignment=Enum.TextYAlignment.Top, MultiLine=true, LayoutOrder=13, Parent=card})
+		round(importBox, 6)
+		local importBtn = wideButton(14, "Import Config", theme.accent)
+		importBtn.MouseButton1Click:Connect(function()
+			local raw = tostring(importBox.Text or "")
+			if raw:gsub("%s+", "") == "" then
+				Lib:Notify({ Title = "Config", Content = "Paste a JSON config first." })
+				return
+			end
+			local ok, data = pcall(function() return HttpService:JSONDecode(raw) end)
+			if not ok or type(data) ~= "table" then
+				Lib:Notify({ Title = "Config", Content = "Invalid JSON config." })
+				return
+			end
+			local applied = false
+			if type(data.Ui) == "table" then
+				for key, value in pairs(data.Ui) do
+					local ctrl2 = Lib._controls[key]
+					if type(ctrl2) == "table" and type(ctrl2.SetValue) == "function" then
+						pcall(ctrl2.SetValue, ctrl2, value, true)
+					end
+				end
+				applied = true
+			end
+			if type(data.Sena) == "table" and type(Lib._configTable) == "table" then
+				for k, v in pairs(data.Sena) do
+					if type(Lib._configTable[k]) == type(v) then
+						if type(v) == "table" then
+							local copy = {}
+							for i, vv in ipairs(v) do
+								copy[i] = vv
+							end
+							Lib._configTable[k] = copy
+						else
+							Lib._configTable[k] = v
+						end
+					end
+				end
+				applied = true
+			end
+			if not applied then
+				Lib:Notify({ Title = "Config", Content = "JSON had no Ui/Sena sections — nothing imported." })
+			else
+				Lib:Notify({ Title = "Config", Content = "External config imported." })
+			end
+		end)
+
+		label("Reset Configuration", 15)
+		local resetBtn = wideButton(16, "Reset All To Default", theme.danger)
+		resetBtn.MouseButton1Click:Connect(function()
+			for _, ctrl2 in pairs(Lib._controls) do
+				if type(ctrl2) == "table" and type(ctrl2.SetValue) == "function" and ctrl2.Default ~= nil then
+					pcall(ctrl2.SetValue, ctrl2, ctrl2.Default, true)
+				end
+			end
+			Lib:Notify({ Title = "Config", Content = "All settings reset to default." })
+		end)
+
+		updateStatus()
 		return card
 	end
 	-- ==== Section ====
@@ -1011,11 +1288,43 @@ end
 		round(minBtn, 13); hoverTween(minBtn)
 		local closeBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -12, 0.5, 0), Size=UDim2.new(0, 26, 0, 26), BackgroundColor3=theme.danger, BackgroundTransparency=0.65, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="×", AutoButtonColor=false, Parent=header})
 		round(closeBtn, 13); hoverTween(closeBtn, 14)
-		local body = mk("Frame", {Position=UDim2.new(0, 0, 0, 44), Size=UDim2.new(1, 0, 1, -44), BackgroundTransparency=1, Parent=main})
+		local body = mk("Frame", {Position=UDim2.new(0, 0, 0, 44), Size=UDim2.new(1, 0, 1, -76), BackgroundTransparency=1, Parent=main})
 		local sidebar = mk("ScrollingFrame", {Size=UDim2.new(0, 170, 1, 0), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, ScrollingDirection=Enum.ScrollingDirection.Y, Parent=body})
 		pad(sidebar, 10, 6, 10, 10)
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=sidebar})
 		local holder = mk("Frame", {Position=UDim2.new(0, 170, 0, 0), Size=UDim2.new(1, -170, 1, 0), BackgroundTransparency=1, Parent=body})
+		do
+			local footer = mk("Frame", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 0, 1, 0), Size=UDim2.new(1, 0, 0, 32), BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=main})
+			mk("Frame", {Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BackgroundTransparency=0.4, BorderSizePixel=0, Parent=footer})
+			mk("TextLabel", {Position=UDim2.new(0, 12, 0, 0), Size=UDim2.new(0, 240, 1, 0), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text="Welcome, " .. tostring(Players.LocalPlayer and Players.LocalPlayer.Name or "Player"), Parent=footer})
+			local chipHolder = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -10, 0.5, 0), Size=UDim2.new(0, 430, 1, 0), BackgroundTransparency=1, Parent=footer})
+			mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, HorizontalAlignment=Enum.HorizontalAlignment.Right, VerticalAlignment=Enum.VerticalAlignment.Center, Padding=UDim.new(0, 6), Parent=chipHolder})
+			local function footerChip(text)
+				local c = mk("TextLabel", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 0, 22), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Font=Enum.Font.GothamSemibold, TextSize=10, TextColor3=theme.subtext, Text=text, Parent=chipHolder})
+				round(c, 11); pad(c, 9, 0, 9, 0)
+				return c
+			end
+			local execName = "Unknown"
+			pcall(function()
+				if type(identifyexecutor) == "function" then execName = tostring(identifyexecutor() or "Unknown") end
+			end)
+			footerChip("Executor: " .. execName)
+			local fpsChip = footerChip("FPS: --")
+			footerChip("Free")
+			do
+				local frames = 0
+				local runSvc = game:GetService("RunService")
+				local conn = runSvc.RenderStepped:Connect(function() frames = frames + 1 end)
+				task.spawn(function()
+					while gui.Parent do
+						task.wait(1)
+						fpsChip.Text = "FPS: " .. tostring(frames)
+						frames = 0
+					end
+					pcall(function() conn:Disconnect() end)
+				end)
+			end
+		end
 		local win = {Gui=gui, Tabs={}}
 		local tabCount = 0
 		function win:AddTab(tcfg)
@@ -3390,7 +3699,7 @@ do
 		local v386, v387 = v290()
 
 		if not v386 then
-			warn("[Treadmill] Gagal minta lepas dari treadmill sebelum steal:", v387)
+			warn("[Treadmill] Failed to request treadmill release before steal:", v387)
 
 			return false
 		end
@@ -3965,7 +4274,7 @@ do
 		end)
 
 		if not ok then
-			warn("[FPSBoost] Gagal hide egg pemain lain:", result)
+			warn("[FPSBoost] Failed to hide other players' eggs:", result)
 
 			return false
 		end
@@ -4034,7 +4343,7 @@ do
 				end)
 
 				if not ok2 then
-					warn("[FPSBoost] Gagal hide pet (manual):", result2)
+					warn("[FPSBoost] Failed to hide pet (manual):", result2)
 
 					return false
 				end
@@ -4043,7 +4352,7 @@ do
 			end
 		end
 
-		warn("[FPSBoost] Gagal set HideOtherPets bawaan game:", result or "setting belum aktif")
+		warn("[FPSBoost] Failed to apply the game's built-in HideOtherPets:", result or "setting not active")
 
 		return false
 	end
@@ -4207,7 +4516,7 @@ do
 			v:Disconnect()
 		end
 
-		warn("[FPSBoost] Gagal flatten material workspace:", result)
+		warn("[FPSBoost] Failed to flatten workspace materials:", result)
 
 		return false
 	end
@@ -4356,7 +4665,7 @@ do
 			local PlotState2 = require(game:GetService("ReplicatedStorage").Client.PlotState)
 
 			if PlotState2.GetMySlot() == nil then
-				warn("[FPSBoost] Slot plot kita belum ke-resolve, skip delete plot dulu (biar aman).")
+				warn("[FPSBoost] Our plot slot has not resolved yet, skipping plot delete for safety.")
 
 				return
 			end
@@ -4404,7 +4713,7 @@ do
 			return u546
 		end
 
-		warn("[FPSBoost] Gagal delete plot pemain lain:", result)
+		warn("[FPSBoost] Failed to delete other players' plots:", result)
 
 		return false
 	end
@@ -4510,7 +4819,7 @@ do
 			return u558
 		end
 
-		warn("[FPSBoost] Gagal delete treadmill pemain lain:", result)
+		warn("[FPSBoost] Failed to delete other players' treadmills:", result)
 
 		return false
 	end
@@ -4536,7 +4845,7 @@ do
 		senaV4Config._fpsBoostApplying = nil
 
 		if not ok then
-			warn("[FPSBoost] Gagal menerapkan FPS Boost:", result)
+			warn("[FPSBoost] Failed to apply FPS Boost:", result)
 		end
 	end
 end
