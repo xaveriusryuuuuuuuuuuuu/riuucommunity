@@ -89,6 +89,7 @@ end
 
 -- ==== Riuu loading screen ====
 	local RiuuLoaderGui = nil
+	local RiuuLoaderShownAt = 0
 
 local function RiuuDestroyLoader()
 	local gui = RiuuLoaderGui
@@ -99,19 +100,29 @@ local function RiuuDestroyLoader()
 		return
 	end
 	
-	pcall(function()
-		local root = gui:FindFirstChild("Root")
-		
-		if root then
-			local TweenService = game:GetService("TweenService")
+	task.spawn(function()
+		if RiuuLoaderShownAt > 0 then
+			local remain = 2 - (os.clock() - RiuuLoaderShownAt)
 			
-			TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {GroupTransparency = 1}):Play()
+			if remain > 0 then
+				task.wait(remain)
+			end
 		end
-	end)
-	
-	task.delay(0.35, function()
+		
 		pcall(function()
-			gui:Destroy()
+			local root = gui:FindFirstChild("Root")
+			
+			if root then
+				local TweenService = game:GetService("TweenService")
+				
+				TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {GroupTransparency = 1}):Play()
+			end
+		end)
+		
+		task.delay(0.35, function()
+			pcall(function()
+				gui:Destroy()
+			end)
 		end)
 	end)
 end
@@ -155,6 +166,7 @@ local function RiuuShowLoader()
 	end
 	
 	RiuuLoaderGui = gui
+	RiuuLoaderShownAt = os.clock()
 	
 	local rootOk, root = pcall(function()
 		return Instance.new("CanvasGroup")
@@ -177,7 +189,7 @@ local function RiuuShowLoader()
 	center.Name = "Center"
 	center.AnchorPoint = Vector2.new(0.5, 0.5)
 	center.Position = UDim2.fromScale(0.5, 0.5)
-	center.Size = UDim2.fromOffset(280, 192)
+	center.Size = UDim2.fromOffset(280, 208)
 	center.BackgroundTransparency = 1
 	center.Parent = root
 	
@@ -250,12 +262,26 @@ local function RiuuShowLoader()
 	barFillCorner.CornerRadius = UDim.new(1, 0)
 	barFillCorner.Parent = barFill
 	
+	local counter = Instance.new("TextLabel")
+	
+	counter.Name = "Counter"
+	counter.AnchorPoint = Vector2.new(0.5, 0)
+	counter.Position = UDim2.new(0.5, 0, 0, 170)
+	counter.Size = UDim2.new(1, 0, 0, 18)
+	counter.BackgroundTransparency = 1
+	counter.Font = Enum.Font.GothamBold
+	counter.Text = "0.0s"
+	counter.TextColor3 = Color3.fromRGB(0, 120, 255)
+	counter.TextSize = 14
+	counter.TextTransparency = 1
+	counter.Parent = center
+	
 	local status = Instance.new("TextLabel")
 	
 	status.Name = "Status"
 	status.AnchorPoint = Vector2.new(0.5, 0)
-	status.Position = UDim2.new(0.5, 0, 0, 174)
-	status.Size = UDim2.new(1, 0, 0, 14)
+	status.Position = UDim2.new(0.5, 0, 0, 190)
+	status.Size = UDim2.new(1, 0, 0, 13)
 	status.BackgroundTransparency = 1
 	status.Font = Enum.Font.Gotham
 	status.Text = "Loading Riuu Hub..."
@@ -285,6 +311,7 @@ local function RiuuShowLoader()
 			task.wait(0.15)
 			TweenService:Create(title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(subtitle, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			TweenService:Create(counter, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(status, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(credit, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 		end)
@@ -302,6 +329,16 @@ local function RiuuShowLoader()
 			
 			task.wait(goingUp and 1.3 or 1.05)
 			goingUp = not goingUp
+		end
+	end)
+	
+	task.spawn(function()
+		while RiuuLoaderGui == gui and counter.Parent do
+			pcall(function()
+				counter.Text = string.format("%.1fs", math.max(0, os.clock() - RiuuLoaderShownAt))
+			end)
+			
+			task.wait(0.1)
 		end
 	end)
 	
@@ -2346,7 +2383,32 @@ end
 			end)
 		end
 		minBtn.MouseButton1Click:Connect(function() setMainShown(false) end)
-		closeBtn.MouseButton1Click:Connect(function() pcall(function() gui:Destroy() end) end)
+		local confirmOpen = false
+		closeBtn.MouseButton1Click:Connect(function()
+			if confirmOpen then return end
+			confirmOpen = true
+			local overlay = mk("TextButton", {Size=UDim2.new(1, 0, 1, 0), BackgroundColor3=Color3.fromRGB(0, 0, 0), BackgroundTransparency=0.45, Text="", AutoButtonColor=false, BorderSizePixel=0, ZIndex=100, Parent=gui})
+			local card = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 304, 0, 160), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Active=true, ZIndex=101, Parent=overlay})
+			round(card, 12)
+			mk("UIStroke", {Color=theme.stroke, Thickness=1, Parent=card})
+			mk("TextLabel", {Position=UDim2.new(0, 16, 0, 16), Size=UDim2.new(1, -32, 0, 20), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=15, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text="Close Riuu Hub?", ZIndex=102, Parent=card})
+			mk("TextLabel", {Position=UDim2.new(0, 16, 0, 42), Size=UDim2.new(1, -32, 0, 48), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="This stops the script and removes the UI permanently. Are you sure you want to continue?", ZIndex=102, Parent=card})
+			local function confirmBtn(text, color, x, cb)
+				local b = mk("TextButton", {Position=UDim2.new(0, x, 0, 110), Size=UDim2.new(0, 128, 0, 34), BackgroundColor3=color, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text=text, AutoButtonColor=false, ZIndex=102, Parent=card})
+				round(b, 8)
+				b.MouseEnter:Connect(function() Tween:Create(b, btnInfo, {BackgroundTransparency = 0.8}):Play() end)
+				b.MouseLeave:Connect(function() Tween:Create(b, btnInfo, {BackgroundTransparency = 0}):Play() end)
+				b.MouseButton1Click:Connect(function()
+					pcall(function() overlay:Destroy() end)
+					confirmOpen = false
+					if cb then cb() end
+				end)
+			end
+			confirmBtn("Cancel", Color3.fromRGB(26, 29, 36), 16, nil)
+			confirmBtn("Yes, Close", theme.danger, 160, function()
+				pcall(function() gui:Destroy() end)
+			end)
+		end)
 		return win
 	end
 	task.spawn(function()
@@ -13952,6 +14014,14 @@ do
 				p464:_startWatchdog()
 			end
 
+			if p464.treadmillManager and type(p464.treadmillManager.setIdleFarm) == "function" then
+				if p464.userStealEnabled then
+					p464.treadmillManager:setIdleFarm(false)
+				elseif senaV4Config.AutoTreadmillIdle and not senaV4Config.AntiTreadmill then
+					p464.treadmillManager:setIdleFarm(true)
+				end
+			end
+
 			p464:_reconcileScramblePortal()
 		end
 
@@ -16723,7 +16793,7 @@ do
 	v612:setTreadmillManager(v613)
 	v613:setDisableDuringAutomation(true)
 
-	if senaV4Config.AutoTreadmillIdle then
+	if senaV4Config.AutoTreadmillIdle and not senaV4Config.AutoSteal then
 		v613:setIdleFarm(true)
 	end
 
