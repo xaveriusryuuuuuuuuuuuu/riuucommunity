@@ -91,12 +91,16 @@ end
 	local RiuuLoaderGui = nil
 	local RiuuLoaderShownAt = 0
 
-local function RiuuDestroyLoader()
+local function RiuuDestroyLoader(onDone)
 	local gui = RiuuLoaderGui
 	
 	RiuuLoaderGui = nil
 	
 	if not gui then
+		if type(onDone) == "function" then
+			task.spawn(onDone)
+		end
+		
 		return
 	end
 	
@@ -123,6 +127,10 @@ local function RiuuDestroyLoader()
 			pcall(function()
 				gui:Destroy()
 			end)
+			
+			if type(onDone) == "function" then
+				pcall(onDone)
+			end
 		end)
 	end)
 end
@@ -179,17 +187,26 @@ local function RiuuShowLoader()
 	root.Name = "Root"
 	root.AnchorPoint = Vector2.new(0.5, 0.5)
 	root.Position = UDim2.fromScale(0.5, 0.5)
-	root.Size = UDim2.fromScale(1, 1)
+	root.Size = UDim2.fromOffset(320, 196)
 	root.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	root.BorderSizePixel = 0
 	root.Parent = gui
 	
+	local rootCorner = Instance.new("UICorner")
+	
+	rootCorner.CornerRadius = UDim.new(0, 14)
+	rootCorner.Parent = root
+	
+	local rootStroke = Instance.new("UIStroke")
+	
+	rootStroke.Color = Color3.fromRGB(30, 33, 42)
+	rootStroke.Thickness = 1
+	rootStroke.Parent = root
+	
 	local center = Instance.new("Frame")
 	
 	center.Name = "Center"
-	center.AnchorPoint = Vector2.new(0.5, 0.5)
-	center.Position = UDim2.fromScale(0.5, 0.5)
-	center.Size = UDim2.fromOffset(280, 208)
+	center.Size = UDim2.fromScale(1, 1)
 	center.BackgroundTransparency = 1
 	center.Parent = root
 	
@@ -197,7 +214,7 @@ local function RiuuShowLoader()
 	
 	logo.Name = "Logo"
 	logo.AnchorPoint = Vector2.new(0.5, 0)
-	logo.Position = UDim2.new(0.5, 0, 0, 0)
+	logo.Position = UDim2.new(0.5, 0, 0, 8)
 	logo.Size = UDim2.fromOffset(0, 0)
 	logo.BackgroundTransparency = 1
 	logo.ScaleType = Enum.ScaleType.Fit
@@ -210,13 +227,13 @@ local function RiuuShowLoader()
 	
 	title.Name = "Title"
 	title.AnchorPoint = Vector2.new(0.5, 0)
-	title.Position = UDim2.new(0.5, 0, 0, 98)
-	title.Size = UDim2.new(1, 0, 0, 30)
+	title.Position = UDim2.new(0.5, 0, 0, 86)
+	title.Size = UDim2.new(1, 0, 0, 24)
 	title.BackgroundTransparency = 1
 	title.Font = Enum.Font.GothamBlack
 	title.Text = "RIUU HUB"
 	title.TextColor3 = Color3.fromRGB(255, 255, 255)
-	title.TextSize = 26
+	title.TextSize = 20
 	title.TextTransparency = 1
 	title.Parent = center
 	
@@ -224,13 +241,13 @@ local function RiuuShowLoader()
 	
 	subtitle.Name = "Subtitle"
 	subtitle.AnchorPoint = Vector2.new(0.5, 0)
-	subtitle.Position = UDim2.new(0.5, 0, 0, 128)
-	subtitle.Size = UDim2.new(1, 0, 0, 16)
+	subtitle.Position = UDim2.new(0.5, 0, 0, 112)
+	subtitle.Size = UDim2.new(1, 0, 0, 14)
 	subtitle.BackgroundTransparency = 1
 	subtitle.Font = Enum.Font.Gotham
 	subtitle.Text = "Steal An Egg"
 	subtitle.TextColor3 = Color3.fromRGB(175, 180, 190)
-	subtitle.TextSize = 13
+	subtitle.TextSize = 12
 	subtitle.TextTransparency = 1
 	subtitle.Parent = center
 	
@@ -238,8 +255,8 @@ local function RiuuShowLoader()
 	
 	barBack.Name = "BarBack"
 	barBack.AnchorPoint = Vector2.new(0.5, 0)
-	barBack.Position = UDim2.new(0.5, 0, 0, 160)
-	barBack.Size = UDim2.new(1, -48, 0, 6)
+	barBack.Position = UDim2.new(0.5, 0, 0, 138)
+	barBack.Size = UDim2.new(1, -56, 0, 6)
 	barBack.BackgroundColor3 = Color3.fromRGB(22, 24, 30)
 	barBack.BorderSizePixel = 0
 	barBack.Parent = center
@@ -266,7 +283,7 @@ local function RiuuShowLoader()
 	
 	counter.Name = "Counter"
 	counter.AnchorPoint = Vector2.new(0.5, 0)
-	counter.Position = UDim2.new(0.5, 0, 0, 170)
+	counter.Position = UDim2.new(0.5, 0, 0, 148)
 	counter.Size = UDim2.new(1, 0, 0, 18)
 	counter.BackgroundTransparency = 1
 	counter.Font = Enum.Font.GothamBold
@@ -280,40 +297,25 @@ local function RiuuShowLoader()
 	
 	status.Name = "Status"
 	status.AnchorPoint = Vector2.new(0.5, 0)
-	status.Position = UDim2.new(0.5, 0, 0, 190)
-	status.Size = UDim2.new(1, 0, 0, 13)
+	status.Position = UDim2.new(0.5, 0, 0, 168)
+	status.Size = UDim2.new(1, 0, 0, 12)
 	status.BackgroundTransparency = 1
 	status.Font = Enum.Font.Gotham
 	status.Text = "Loading Riuu Hub..."
 	status.TextColor3 = Color3.fromRGB(140, 146, 158)
-	status.TextSize = 12
+	status.TextSize = 11
 	status.TextTransparency = 1
 	status.Parent = center
-	
-	local credit = Instance.new("TextLabel")
-	
-	credit.Name = "Credit"
-	credit.AnchorPoint = Vector2.new(0.5, 1)
-	credit.Position = UDim2.new(0.5, 0, 1, -16)
-	credit.Size = UDim2.new(1, 0, 0, 14)
-	credit.BackgroundTransparency = 1
-	credit.Font = Enum.Font.Gotham
-	credit.Text = "Riuu Community"
-	credit.TextColor3 = Color3.fromRGB(90, 95, 105)
-	credit.TextSize = 11
-	credit.TextTransparency = 1
-	credit.Parent = root
 	
 	task.spawn(function()
 		pcall(function()
 			TweenService:Create(root, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
-			TweenService:Create(logo, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(84, 84), ImageTransparency = 0}):Play()
+			TweenService:Create(logo, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(72, 72), ImageTransparency = 0}):Play()
 			task.wait(0.15)
 			TweenService:Create(title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(subtitle, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(counter, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 			TweenService:Create(status, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
-			TweenService:Create(credit, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
 		end)
 	end)
 	
@@ -2251,7 +2253,7 @@ end
 			local footer = mk("Frame", {AnchorPoint=Vector2.new(0, 1), Position=UDim2.new(0, 0, 1, 0), Size=UDim2.new(1, 0, 0, 32), BackgroundColor3=theme.headerBg, BorderSizePixel=0, Parent=main})
 			mk("Frame", {Size=UDim2.new(1, 0, 0, 1), BackgroundColor3=theme.stroke, BackgroundTransparency=0.4, BorderSizePixel=0, Parent=footer})
 			mk("TextLabel", {Position=UDim2.new(0, 12, 0, 0), Size=UDim2.new(0, 240, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text="RIUU HUB  ·  Welcome, " .. tostring(Players.LocalPlayer and Players.LocalPlayer.Name or "Player"), Parent=footer})
-			local chipHolder = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -10, 0.5, 0), Size=UDim2.new(0, 340, 1, 0), BackgroundTransparency=1, Parent=footer})
+			local chipHolder = mk("Frame", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -10, 0.5, 0), Size=UDim2.new(0, 400, 1, 0), BackgroundTransparency=1, Parent=footer})
 			mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, HorizontalAlignment=Enum.HorizontalAlignment.Right, VerticalAlignment=Enum.VerticalAlignment.Center, Padding=UDim.new(0, 6), Parent=chipHolder})
 			local function footerChip(text)
 				return mk("TextLabel", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.GothamSemibold, TextSize=10, TextColor3=theme.subtext, Text=text, Parent=chipHolder})
@@ -2262,6 +2264,7 @@ end
 			end)
 			footerChip("Executor: " .. execName)
 			local fpsChip = footerChip("FPS: --")
+			local coordChip = footerChip("Coords: --")
 			footerChip("Free")
 			do
 				local frames = 0
@@ -2274,6 +2277,38 @@ end
 						frames = 0
 					end
 					pcall(function() conn:Disconnect() end)
+				end)
+			end
+			do
+				local acc = 0
+				local runSvc2 = game:GetService("RunService")
+				local conn2 = runSvc2.Heartbeat:Connect(function(dt)
+					acc += dt
+
+					if acc < 0.1 then
+						return
+					end
+
+					acc = 0
+					local char = Players.LocalPlayer and Players.LocalPlayer.Character
+					local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+					if hrp then
+						local pos = hrp.Position
+
+						coordChip.Text = string.format("Coords: %.0f, %.0f, %.0f", pos.X, pos.Y, pos.Z)
+					else
+						coordChip.Text = "Coords: --"
+					end
+				end)
+				task.spawn(function()
+					while gui.Parent do
+						task.wait(1)
+					end
+
+					pcall(function()
+						conn2:Disconnect()
+					end)
 				end)
 			end
 		end
@@ -31924,7 +31959,14 @@ do
 				v4742:BindConfigTable(senaV4Config)
 			end)
 			pcall(function()
-				RiuuDestroyLoader()
+				v4742.Gui.Enabled = false
+			end)
+			pcall(function()
+				RiuuDestroyLoader(function()
+					pcall(function()
+						v4742.Gui.Enabled = true
+					end)
+				end)
 			end)
 			t216 = {}
 			t217 = { "Respawn Point" }
