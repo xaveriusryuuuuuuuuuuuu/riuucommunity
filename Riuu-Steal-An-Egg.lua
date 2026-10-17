@@ -9213,63 +9213,12 @@ do
 
 			p266:_setStatus("Heading to target egg")
 
-			local v1106a = nil
-
-			if p266.catalog then
-				local v1106b, v1106c = pcall(p266.catalog.resolve, v1089)
-
-				v1106a = v1106b and v1106c or nil
-			end
-
-			if v1106a ~= nil and t42[v1106a.rarity] == true then
-				p266:_setStatus("Walking to target egg (top rarity)")
-
-				local v1106d = os.clock() + 420
-
-				while not v1105() and os.clock() < v1106d do
-					local v1106e = LocalPlayer2.Character
-					local v1106f = v1106e and v1106e:FindFirstChild("HumanoidRootPart")
-
-					if v1106f then
-						local v1106g = v1106f.Position - v1093.Position
-
-						if Vector3.new(v1106g.X, 0, v1106g.Z).Magnitude < 30 then
-							break
-						end
-					end
-
-					local v1106h = EggState2.ReadFieldEgg(Uid)
-
-					if v1106h and v1106h.State ~= AreaEggs.States.Slot and v1106h.State ~= AreaEggs.States.Dropped then
-						p266:_finish("Target egg no longer available")
-
-						return
-					end
-
-					p266:_walkTo(v1093, v1105)
-
-					task.wait(0.2)
+			if not p266:_glideRoot(v1093, v1105) then
+				if not v1105() then
+					p266:_finish("Could not reach the egg — retrying")
 				end
 
-				if v1105() then
-					return
-				end
-
-				if not p266:_glideRoot(v1093, v1105) then
-					if not v1105() then
-						p266:_finish("Could not reach the egg — retrying")
-					end
-
-					return
-				end
-			else
-				if not p266:_glideRoot(v1093, v1105) then
-					if not v1105() then
-						p266:_finish("Could not reach the egg — retrying")
-					end
-
-					return
-				end
+				return
 			end
 
 			if v1105() then
@@ -12512,38 +12461,9 @@ do
 					local v1575 = v1531()
 
 					if v1575 then
-						local v1574a = p428.records[p429] or v1523()
-						local v1574b = nil
-
-						if v1574a and p428.catalog then
-							local v1574k, v1574l = pcall(p428.catalog.resolve, v1574a)
-
-							v1574b = v1574k and v1574l or nil
-						end
-
-						if v1574b ~= nil and t42[v1574b.rarity] == true then
-							p428:_setStatus("Walking egg home (top rarity)")
-
-							local v1574g = os.clock() + 420
-
-							while v1520() and v1524() and not v1526() and os.clock() < v1574g do
-								local v1574m = v1521()
-
-								if v1574m and (v1574m.Position - v1575.Position).Magnitude < 12 then
-									break
-								end
-
-								p428:_walkTo(v1575, function()
-									return not v1520() or not v1524() or v1526()
-								end)
-
-								task.wait(0.2)
-							end
-						else
-							p428:_glideRoot(v1575, function()
-								return not v1520() or not v1524()
-							end)
-						end
+						p428:_glideRoot(v1575, function()
+							return not v1520() or not v1524()
+						end)
 					end
 				end
 
@@ -13077,7 +12997,6 @@ do
 						p453.reportedUid = nil
 						p453.stats.deliveryFailed = (p453.stats.deliveryFailed or 0) + 1
 						p453.stats.lastResult = "Delivery failed — retrying"
-						p453.skippedEggs[activeTarget.Uid] = os.clock() + 90
 						p453:_notify()
 
 						if p453.enabled and not p453.running then
