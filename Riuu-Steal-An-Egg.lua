@@ -9230,13 +9230,37 @@ do
 					local v1106e = LocalPlayer2.Character
 					local v1106f = v1106e and v1106e:FindFirstChild("HumanoidRootPart")
 
-					if v1106f and (v1106f.Position - v1093.Position).Magnitude < 10 then
-						break
+					if v1106f then
+						local v1106g = v1106f.Position - v1093.Position
+
+						if Vector3.new(v1106g.X, 0, v1106g.Z).Magnitude < 30 then
+							break
+						end
+					end
+
+					local v1106h = EggState2.ReadFieldEgg(Uid)
+
+					if v1106h and v1106h.State ~= AreaEggs.States.Slot and v1106h.State ~= AreaEggs.States.Dropped then
+						p266:_finish("Target egg no longer available")
+
+						return
 					end
 
 					p266:_walkTo(v1093, v1105)
 
 					task.wait(0.2)
+				end
+
+				if v1105() then
+					return
+				end
+
+				if not p266:_glideRoot(v1093, v1105) then
+					if not v1105() then
+						p266:_finish("Could not reach the egg — retrying")
+					end
+
+					return
 				end
 			else
 				if not p266:_glideRoot(v1093, v1105) then
@@ -13053,6 +13077,7 @@ do
 						p453.reportedUid = nil
 						p453.stats.deliveryFailed = (p453.stats.deliveryFailed or 0) + 1
 						p453.stats.lastResult = "Delivery failed — retrying"
+						p453.skippedEggs[activeTarget.Uid] = os.clock() + 90
 						p453:_notify()
 
 						if p453.enabled and not p453.running then
