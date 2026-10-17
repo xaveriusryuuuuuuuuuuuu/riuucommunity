@@ -9213,12 +9213,39 @@ do
 
 			p266:_setStatus("Heading to target egg")
 
-			if not p266:_glideRoot(v1093, v1105) then
-				if not v1105() then
-					p266:_finish("Could not reach the egg — retrying")
-				end
+			local v1106a = nil
 
-				return
+			if p266.catalog then
+				local v1106b, v1106c = pcall(p266.catalog.resolve, v1089)
+
+				v1106a = v1106b and v1106c or nil
+			end
+
+			if v1106a ~= nil and t42[v1106a.rarity] == true then
+				p266:_setStatus("Walking to target egg (top rarity)")
+
+				local v1106d = os.clock() + 420
+
+				while not v1105() and os.clock() < v1106d do
+					local v1106e = LocalPlayer2.Character
+					local v1106f = v1106e and v1106e:FindFirstChild("HumanoidRootPart")
+
+					if v1106f and (v1106f.Position - v1093.Position).Magnitude < 10 then
+						break
+					end
+
+					p266:_walkTo(v1093, v1105)
+
+					task.wait(0.2)
+				end
+			else
+				if not p266:_glideRoot(v1093, v1105) then
+					if not v1105() then
+						p266:_finish("Could not reach the egg — retrying")
+					end
+
+					return
+				end
 			end
 
 			if v1105() then
@@ -12504,6 +12531,10 @@ do
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
+
+					if not v1524() then
+						break
+					end
 
 					if v1577 and v1578 and not p428:_isInSafeArea(v1577) then
 						local v1579 = p428:_resolveSafeCFrame(v1577)
