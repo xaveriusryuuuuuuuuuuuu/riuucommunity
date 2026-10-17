@@ -6247,7 +6247,7 @@ do
 			pcall(function()
 				n15 = Stats.Network.ServerStats.Ping:GetValue()
 			end)
-			task.wait(math.max(0.3, n15 * 2.5 / 1000))
+			task.wait(math.max(0.15, n15 * 1.2 / 1000))
 
 			local t47 = {
 				Uid = p134
@@ -9158,48 +9158,15 @@ do
 				return p266.destroyed or not p266.enabled or p266.instantPhase ~= "hunting" or not p266.activeTarget or p266.activeTarget.Uid ~= Uid
 			end
 
-			if p266.config.flyAerial then
-				p266:_setStatus("Heading to target egg")
-				p266:_startFlyGrounding()
+			p266:_setStatus("Heading to target egg")
 
-				local v1106 = p266:_flyWalkTo(v1093, v1105, 8, 110)
-
-				p266:_stopFlyGrounding()
-
-				if not v1106 then
-					if not v1105() then
-						p266:_finish("Could not reach the egg — retrying")
-					end
-
-					return
+			if not p266:_glideRoot(v1093, v1105) then
+				if not v1105() then
+					p266:_finish("Could not reach the egg — retrying")
 				end
-			elseif p266.config.flyZigzag then
-				p266:_setStatus("Heading to target egg")
 
-				if not p266:_walkToZigzag(v1093, v1105) then
-					if not v1105() then
-						p266:_finish("Zig-zag walk to target failed")
-					end
-
-					return
-				end
-			else
-				p266:_setStatus("Heading to target egg")
-
-				if not p266:_walkTo(v1093, v1105) then
-					if not v1105() then
-						p266:_finish("Walk to target failed")
-					end
-
-					return
-				end
-			end
-
-			if v1105() then
 				return
 			end
-
-			p266:_glideRoot(v1093, v1105, p266:_legitWalkSpeed())
 
 			if v1105() then
 				return
@@ -11932,7 +11899,7 @@ do
 					u1448 = u1448 or os.clock() + v1449
 					p412.stats.lastResult = "Carry requested"
 					p412:_setStatus(lastCarryReject and "Waiting for carry · " .. lastCarryReject or "Waiting for carry confirmation")
-					task.wait(0.25)
+					task.wait(0.15)
 				end
 			end)
 		end
