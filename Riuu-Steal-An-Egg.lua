@@ -6209,6 +6209,59 @@ do
 			"CandidateGroundedSample"
 		}
 		local vector32 = Vector3.new(544.76, 71.5, -416.48)
+		local vector32NextSync = 0
+		local homePlotModel = nil
+		local function v722SyncHome(p274f)
+			local now = os.clock()
+
+			if p274f ~= true and now < vector32NextSync then
+				return
+			end
+
+			vector32NextSync = now + 2
+
+			pcall(function()
+				local slot = type(PlotState2.ResolveLocalSlot) == "function" and PlotState2.ResolveLocalSlot() or PlotState2.GetMySlot()
+				local folder = type(PlotState2.ResolveFolder) == "function" and PlotState2.ResolveFolder() or PlotState2.GetPlotsFolder()
+				local plot = folder and slot and folder:FindFirstChild(tostring(slot))
+				local Position = nil
+				local ok2, data = pcall(PlotState2.ResolvePlot)
+
+				if ok2 and type(data) == "table" then
+					if typeof(data.RespawnPointCFrame) == "CFrame" then
+						Position = data.RespawnPointCFrame.Position
+					elseif typeof(data.Model) == "Instance" and data.Model then
+						local spawn = data.Model:FindFirstChild("Spawn", true)
+
+						Position = spawn and spawn:IsA("BasePart") and spawn.Position or nil
+					end
+				end
+
+				if not Position and plot then
+					local spawn = plot:FindFirstChild("Spawn", true)
+
+					if spawn and spawn:IsA("BasePart") then
+						Position = spawn.Position
+					else
+						Position = plot:GetPivot().Position
+					end
+				end
+
+				if plot then
+					homePlotModel = plot
+				end
+
+				if typeof(Position) == "Vector3" and (Position - vector32).Magnitude > 2 then
+					vector32 = Vector3.new(Position.X, Position.Y, Position.Z)
+				end
+			end)
+		end
+
+		task.spawn(function()
+			task.wait(3)
+			v722SyncHome(true)
+		end)
+
 		local t44 = {
 			-364.3,
 			-367.21,
@@ -9313,6 +9366,8 @@ do
 
 		do
 			t46._resolveSafeCFrame = function(p279, p280)
+				v722SyncHome()
+
 				if not p280 then
 					return nil
 				end
@@ -10428,6 +10483,8 @@ do
 			return not v1296
 		end
 		t46._isInSafeArea = function(p340, p341)
+			v722SyncHome()
+
 			if not p341 then
 				return false
 			end
@@ -12658,7 +12715,9 @@ do
 
 				p428:_setStatus("Waiting for deposit")
 
-				local v1576 = os.clock() + 8
+				local v1576 = os.clock() + 15
+				local v1576a = false
+				local v1576b = 0
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
@@ -12670,6 +12729,32 @@ do
 							v1539(v1579, function()
 								return not v1520() or v1526()
 							end)
+						end
+					elseif v1577 and v1578 then
+						if not v1576a then
+							v1576a = true
+							p428:_stopHoverPad()
+							pcall(function()
+								v1577.AssemblyLinearVelocity = Vector3.zero
+								v1577.AssemblyAngularVelocity = Vector3.zero
+							end)
+						elseif v1576b <= os.clock() and v1524() then
+							v1576b = os.clock() + 3
+							p428:_stopHoverPad()
+							p428:_groundSnap()
+
+							local v1576c = homePlotModel and homePlotModel.Parent and homePlotModel:FindFirstChild("TreadmillBottom", true)
+
+							if v1576c and v1576c:IsA("BasePart") then
+								pcall(function()
+									local v1576d = p428:_groundYAt(v1576c.Position.X, v1576c.Position.Z, nil) or v1576c.Position.Y + v1576c.Size.Y * 0.5
+									local v1576e = cFrameNew(v1576c.Position.X, v1576d + p428:_feetOffset(v1577, v1578), v1576c.Position.Z) * v1577.CFrame.Rotation
+
+									v1577.CFrame = v1576e
+									v1577.AssemblyLinearVelocity = Vector3.zero
+									v1577.AssemblyAngularVelocity = Vector3.zero
+								end)
+							end
 						end
 					end
 
@@ -13594,6 +13679,8 @@ do
 
 				return
 			end
+
+			v722SyncHome()
 
 			local v1662 = HumanoidRootPart.Position - vector32
 			local Magnitude = Vector2.new(v1662.X, v1662.Z).Magnitude
