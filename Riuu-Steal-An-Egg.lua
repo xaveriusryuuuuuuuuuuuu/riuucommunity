@@ -87,6 +87,251 @@ function RiuuLogoApply(label)
 	return loaded
 end
 
+-- ==== Riuu loading screen ====
+	local RiuuLoaderGui = nil
+
+local function RiuuDestroyLoader()
+	local gui = RiuuLoaderGui
+	
+	RiuuLoaderGui = nil
+	
+	if not gui then
+		return
+	end
+	
+	pcall(function()
+		local root = gui:FindFirstChild("Root")
+		
+		if root then
+			local TweenService = game:GetService("TweenService")
+			
+			TweenService:Create(root, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {GroupTransparency = 1}):Play()
+		end
+	end)
+	
+	task.delay(0.35, function()
+		pcall(function()
+			gui:Destroy()
+		end)
+	end)
+end
+
+local function RiuuShowLoader()
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	local lp = Players.LocalPlayer
+	
+	if not lp then
+		return
+	end
+	
+	pcall(function()
+		local holder = (gethui and gethui()) or lp:FindFirstChildOfClass("PlayerGui")
+		local old = holder and holder:FindFirstChild("RiuuLoaderScreen")
+		
+		if old then
+			old:Destroy()
+		end
+	end)
+	
+	if RiuuLoaderGui then
+		RiuuLoaderGui = nil
+	end
+	
+	local gui = Instance.new("ScreenGui")
+	
+	gui.Name = "RiuuLoaderScreen"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.DisplayOrder = 9999
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	
+	pcall(function()
+		gui.Parent = (gethui and gethui()) or lp:FindFirstChildOfClass("PlayerGui")
+	end)
+	
+	if not gui.Parent then
+		return
+	end
+	
+	RiuuLoaderGui = gui
+	
+	local rootOk, root = pcall(function()
+		return Instance.new("CanvasGroup")
+	end)
+	
+	if not rootOk or typeof(root) ~= "Instance" then
+		root = Instance.new("Frame")
+	end
+	
+	root.Name = "Root"
+	root.AnchorPoint = Vector2.new(0.5, 0.5)
+	root.Position = UDim2.fromScale(0.5, 0.5)
+	root.Size = UDim2.fromScale(1, 1)
+	root.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	root.BorderSizePixel = 0
+	root.Parent = gui
+	
+	local center = Instance.new("Frame")
+	
+	center.Name = "Center"
+	center.AnchorPoint = Vector2.new(0.5, 0.5)
+	center.Position = UDim2.fromScale(0.5, 0.5)
+	center.Size = UDim2.fromOffset(280, 192)
+	center.BackgroundTransparency = 1
+	center.Parent = root
+	
+	local logo = Instance.new("ImageLabel")
+	
+	logo.Name = "Logo"
+	logo.AnchorPoint = Vector2.new(0.5, 0)
+	logo.Position = UDim2.new(0.5, 0, 0, 0)
+	logo.Size = UDim2.fromOffset(0, 0)
+	logo.BackgroundTransparency = 1
+	logo.ScaleType = Enum.ScaleType.Fit
+	logo.ImageTransparency = 1
+	logo.Parent = center
+	
+	RiuuLogoApply(logo)
+	
+	local title = Instance.new("TextLabel")
+	
+	title.Name = "Title"
+	title.AnchorPoint = Vector2.new(0.5, 0)
+	title.Position = UDim2.new(0.5, 0, 0, 98)
+	title.Size = UDim2.new(1, 0, 0, 30)
+	title.BackgroundTransparency = 1
+	title.Font = Enum.Font.GothamBlack
+	title.Text = "RIUU HUB"
+	title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	title.TextSize = 26
+	title.TextTransparency = 1
+	title.Parent = center
+	
+	local subtitle = Instance.new("TextLabel")
+	
+	subtitle.Name = "Subtitle"
+	subtitle.AnchorPoint = Vector2.new(0.5, 0)
+	subtitle.Position = UDim2.new(0.5, 0, 0, 128)
+	subtitle.Size = UDim2.new(1, 0, 0, 16)
+	subtitle.BackgroundTransparency = 1
+	subtitle.Font = Enum.Font.Gotham
+	subtitle.Text = "Steal An Egg"
+	subtitle.TextColor3 = Color3.fromRGB(175, 180, 190)
+	subtitle.TextSize = 13
+	subtitle.TextTransparency = 1
+	subtitle.Parent = center
+	
+	local barBack = Instance.new("Frame")
+	
+	barBack.Name = "BarBack"
+	barBack.AnchorPoint = Vector2.new(0.5, 0)
+	barBack.Position = UDim2.new(0.5, 0, 0, 160)
+	barBack.Size = UDim2.new(1, -48, 0, 6)
+	barBack.BackgroundColor3 = Color3.fromRGB(22, 24, 30)
+	barBack.BorderSizePixel = 0
+	barBack.Parent = center
+	
+	local barBackCorner = Instance.new("UICorner")
+	
+	barBackCorner.CornerRadius = UDim.new(1, 0)
+	barBackCorner.Parent = barBack
+	
+	local barFill = Instance.new("Frame")
+	
+	barFill.Name = "BarFill"
+	barFill.Size = UDim2.new(0, 0, 1, 0)
+	barFill.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+	barFill.BorderSizePixel = 0
+	barFill.Parent = barBack
+	
+	local barFillCorner = Instance.new("UICorner")
+	
+	barFillCorner.CornerRadius = UDim.new(1, 0)
+	barFillCorner.Parent = barFill
+	
+	local status = Instance.new("TextLabel")
+	
+	status.Name = "Status"
+	status.AnchorPoint = Vector2.new(0.5, 0)
+	status.Position = UDim2.new(0.5, 0, 0, 174)
+	status.Size = UDim2.new(1, 0, 0, 14)
+	status.BackgroundTransparency = 1
+	status.Font = Enum.Font.Gotham
+	status.Text = "Loading Riuu Hub..."
+	status.TextColor3 = Color3.fromRGB(140, 146, 158)
+	status.TextSize = 12
+	status.TextTransparency = 1
+	status.Parent = center
+	
+	local credit = Instance.new("TextLabel")
+	
+	credit.Name = "Credit"
+	credit.AnchorPoint = Vector2.new(0.5, 1)
+	credit.Position = UDim2.new(0.5, 0, 1, -16)
+	credit.Size = UDim2.new(1, 0, 0, 14)
+	credit.BackgroundTransparency = 1
+	credit.Font = Enum.Font.Gotham
+	credit.Text = "Riuu Community"
+	credit.TextColor3 = Color3.fromRGB(90, 95, 105)
+	credit.TextSize = 11
+	credit.TextTransparency = 1
+	credit.Parent = root
+	
+	task.spawn(function()
+		pcall(function()
+			TweenService:Create(root, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {GroupTransparency = 0}):Play()
+			TweenService:Create(logo, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.fromOffset(84, 84), ImageTransparency = 0}):Play()
+			task.wait(0.15)
+			TweenService:Create(title, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			TweenService:Create(subtitle, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			TweenService:Create(status, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+			TweenService:Create(credit, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+		end)
+	end)
+	
+	task.spawn(function()
+		local goingUp = true
+		
+		while RiuuLoaderGui == gui and barFill.Parent do
+			local target = goingUp and UDim2.new(0.72, 0, 1, 0) or UDim2.new(0.08, 0, 1, 0)
+			
+			pcall(function()
+				TweenService:Create(barFill, TweenInfo.new(goingUp and 1.15 or 0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {Size = target}):Play()
+			end)
+			
+			task.wait(goingUp and 1.3 or 1.05)
+			goingUp = not goingUp
+		end
+	end)
+	
+	task.spawn(function()
+		local steps = {"Loading modules...", "Preparing interface...", "Almost ready..."}
+		
+		for i = 1, 60 do
+			if RiuuLoaderGui ~= gui or not gui.Parent then
+				return
+			end
+			
+			pcall(function()
+				status.Text = steps[(i - 1) % #steps + 1]
+			end)
+			
+			task.wait(0.9)
+		end
+	end)
+	
+	task.delay(45, function()
+		if RiuuLoaderGui == gui then
+			RiuuDestroyLoader()
+		end
+	end)
+	
+	return gui
+end
+
+RiuuShowLoader()
+
 -- ==== Riuu UI Library (Simple & Aesthetic) ====
 local function RiuuCreateUI()
 	pcall(function() setfpscap(120) end)
@@ -12294,10 +12539,6 @@ do
 
 			p428._instantReturnToken = instantReturnToken
 			p428._flyDeparting = false
-
-			if p428.config.stealMode == "Fly" then
-				p428:_showTreadmillDecoy()
-			end
 
 			task.spawn(function()
 				local function v1520()
@@ -29423,6 +29664,9 @@ do
 		end
 
 		if not RiuuLib then
+			pcall(function()
+				RiuuDestroyLoader()
+			end)
 			return
 		end
 
@@ -31608,6 +31852,9 @@ do
 			v4779(v4742)
 			pcall(function()
 				v4742:BindConfigTable(senaV4Config)
+			end)
+			pcall(function()
+				RiuuDestroyLoader()
 			end)
 			t216 = {}
 			t217 = { "Respawn Point" }
