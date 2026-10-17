@@ -139,6 +139,35 @@ local function RiuuCreateUI()
 	Lib._controls = {}
 	Lib._configTable = nil
 
+	local soundCache = {}
+	local function playSound(kind)
+		task.spawn(function()
+			pcall(function()
+				local ann = (kind == "announce")
+				local s = soundCache[ann]
+				if not s or not s.Parent then
+					s = Instance.new("Sound")
+					s.Name = "RiuuUiSound"
+					s.SoundId = "rbxasset://sounds/electronicpingshort.wav"
+					s.Volume = ann and 0.8 or 0.25
+					s.PlaybackSpeed = ann and 0.7 or 1.3
+					s.Parent = game:GetService("SoundService")
+					soundCache[ann] = s
+				end
+				s.TimePosition = 0
+				s:Play()
+				if ann then
+					task.delay(0.22, function()
+						pcall(function()
+							s.TimePosition = 0
+							s:Play()
+						end)
+					end)
+				end
+			end)
+		end)
+	end
+
 	local function mk(class, props, parent)
 		local inst = Instance.new(class)
 		local par = parent
@@ -150,6 +179,15 @@ local function RiuuCreateUI()
 			end
 		end
 		if par then inst.Parent = par end
+		if class == "TextButton" or class == "ImageButton" then
+			pcall(function()
+				inst.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+						playSound("click")
+					end
+				end)
+			end)
+		end
 		return inst
 	end
 	local function round(inst, radius)
@@ -377,17 +415,20 @@ end
 		if cfg.Content then
 			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(cfg.Content), LayoutOrder=1, Parent=card})
 		end
-		local btn = mk("TextButton", {Size=UDim2.new(1, -10, 0, 26), Position=UDim2.new(0, 5, 0, 22), BackgroundColor3=Color3.fromRGB(9, 10, 14), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, Text=multi and (table.concat(value, ", ") or "") or value, AutoButtonColor=false, TextTruncate=Enum.TextTruncate.AtEnd, Parent=card})
-		round(btn, 6)
-		local listFrame = mk("Frame", {Size=UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6), Position=UDim2.new(0, 5, 0, 54), BackgroundColor3=Color3.fromRGB(9, 10, 14), BorderSizePixel=0, Visible=false, ClipsDescendants=true, Parent=card})
+		local btn = mk("TextButton", {Size=UDim2.new(1, -10, 0, 26), Position=UDim2.new(0, 5, 0, 22), BackgroundColor3=Color3.fromRGB(38, 42, 54), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, Text=multi and (table.concat(value, ", ") or "") or value, AutoButtonColor=false, TextTruncate=Enum.TextTruncate.AtEnd, Parent=card})
+		round(btn, 6); strk(btn, theme.stroke, 0.6)
+		local listFrame = mk("Frame", {Size=UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6), Position=UDim2.new(0, 5, 0, 54), BackgroundColor3=Color3.fromRGB(30, 34, 44), BorderSizePixel=0, Visible=false, ClipsDescendants=true, Parent=card})
 		round(listFrame, 6); strk(listFrame, theme.stroke, 0.5)
 		local scroll = mk("ScrollingFrame", {Size=UDim2.new(1, -6, 1, -6), Position=UDim2.new(0, 3, 0, 3), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, Parent=listFrame})
 		mk("UIListLayout", {Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=scroll})
 		local open = false
 		local function rebuild()
+			listFrame.Size = UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6)
 			for _, c in ipairs(scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
 			for _, opt in ipairs(options) do
-				local ob = mk("TextButton", {Size=UDim2.new(1, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(opt), Parent=scroll})
+				local ob = mk("TextButton", {Size=UDim2.new(1, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(opt), Parent=scroll})
+				ob.MouseEnter:Connect(function() ob.TextColor3 = theme.accent end)
+				ob.MouseLeave:Connect(function() ob.TextColor3 = theme.text end)
 				ob.MouseButton1Click:Connect(function()
 					if multi then
 						local found = false
@@ -634,78 +675,94 @@ end
 		return text
 	end
 
-	local CHAT_MARKER = "\226\128\139"
-	local function sendGameChat(text)
-		text = tostring(text or "")
-		if text:gsub("%s+", "") == "" then return false end
-		local sent = false
+	RIUU_API = "https://riuu-chat-4dxx7ucuh4v.qoder.website/functions/v1/app"
+
+	local function riuuUrlEncode(s)
+		s = tostring(s or "")
+		return (s:gsub("[^%w%-_.~]", function(c)
+			return string.format("%%%02X", string.byte(c))
+		end))
+	end
+
+	local function riuuHttpGet(url)
+		local body
 		pcall(function()
-			local tcs = game:GetService("TextChatService")
-			local channels = tcs:FindFirstChild("TextChannels")
-			local general = channels and channels:FindFirstChild("RBXGeneral")
-			if general then
-				general:SendAsync(text)
-				sent = true
+			if type(request) == "function" then
+				local res = request({ Url = url, Method = "GET" })
+				body = type(res) == "table" and res.Body or res
+			elseif type(http_request) == "function" then
+				local res = http_request({ Url = url, Method = "GET" })
+				body = type(res) == "table" and res.Body or res
+			else
+				body = game:HttpGet(url)
 			end
 		end)
-		if not sent then
-			pcall(function()
-				local bar = game:GetService("TextChatService"):FindFirstChild("ChatInputBarConfiguration")
-				local target = bar and bar:FindFirstChild("TargetTextChannel")
-				if target then
-					target:SendAsync(text)
-					sent = true
+		if type(body) == "table" and type(body.Body) == "string" then body = body.Body end
+		return type(body) == "string" and body or nil
+	end
+
+	local function riuuApi(params)
+		if type(RIUU_API) ~= "string" or RIUU_API == "" then return nil end
+		local parts = {}
+		for k, v in pairs(params) do
+			parts[#parts + 1] = riuuUrlEncode(k) .. "=" .. riuuUrlEncode(v)
+		end
+		local raw = riuuHttpGet(RIUU_API .. "?" .. table.concat(parts, "&"))
+		if type(raw) ~= "string" or raw == "" then return nil end
+		local ok, data = pcall(function() return HttpService:JSONDecode(raw) end)
+		if ok and type(data) == "table" then return data end
+		return nil
+	end
+
+	local function showAnnounce(from, body)
+		pcall(function()
+			local holder = (typeof(gethui) == "function" and gethui()) or Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+			if not holder then return end
+			for _, gui2 in ipairs(holder:GetChildren()) do
+				if gui2:IsA("ScreenGui") and gui2.Name == "RiuuBanner" then
+					gui2:Destroy()
+				end
+			end
+			local gui = Instance.new("ScreenGui")
+			gui.Name = "RiuuBanner"
+			gui.ResetOnSpawn = false
+			gui.DisplayOrder = 600
+			gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+			gui.Parent = holder
+			local frame = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0), Position=UDim2.new(0.5, 0, 0, 12), Size=UDim2.new(0.62, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, Parent=gui})
+			strk(frame, theme.accent, 0.8); pad(frame, 14, 10, 14, 10)
+			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=frame})
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text="RIUU ANNOUNCEMENT  ·  " .. tostring(from or "Riuu"), LayoutOrder=1, Parent=frame})
+			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamMedium, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(body or ""), LayoutOrder=2, Parent=frame})
+			playSound("announce")
+			task.delay(8, function()
+				if gui and gui.Parent then
+					gui:Destroy()
 				end
 			end)
-		end
-		if not sent then
-			pcall(function()
-				local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-				local say = events and events:FindFirstChild("SayMessageRequest")
-				if say then
-					say:FireServer(text, "All")
-					sent = true
-				end
-			end)
-		end
-		return sent
+		end)
 	end
 
 	local function makeLiveChat(parent, cfg)
 		cfg = cfg or {}
 		local height = math.clamp(tonumber(cfg.Height) or 330, 240, 560)
 		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "You"
+		local myKey = "u" .. tostring((Players.LocalPlayer and Players.LocalPlayer.UserId) or 0)
 
 		local card = mk("Frame", {Size=UDim2.new(1, 0, 0, height), BackgroundColor3=theme.panelBg, BorderSizePixel=0, Parent=parent})
 		round(card, 8); pad(card, 8, 8, 8, 8)
 
-		local state = { room = "General", on = true, hidden = false }
+		local state = { room = "General", on = true, hidden = false, online = 0 }
 		local messages = {}
 		local msgSeq = 0
+		local sinceCursor = ""
+		local adminAlias = {}
+		local seenAnnounce = {}
+		local failCount = 0
+		local firstLoadDone = false
 		local lastKey, lastTime = nil, 0
-		local riuuSeen = {}
 
 		local roomNames = {"General", "Indonesian", "Philippines", "Vietnam", "Brazilian"}
-		local langWords = {
-			Indonesian = {"gua ", "gue ", " lo ", " lu ", "kamu", "banget", "gak", "nggak", "kok ", "nih ", "tuh ", "udah", "aja", "bang ", "kak ", "sini", "kenapa", "gimana", "bener", "mantap", "saya", "yg ", "dgn", "wkwk"},
-			Philippines = {"ako", "ikaw", "naman", "kayo", "salamat", "sige", "kainis", "grabe", "dito", "idol", "lods", " pre ", " tol ", "sana", "haha"},
-			Vietnamese = {"khong", "không", "bạn", " gi ", "vậy", "nhé", "nha ", "vay", "cam on", "ơn", "dkm", "vcl"},
-			Brazilian = {"vc ", "voce", "você", "obrigado", "obrigada", "mano", "legal", "não", "nao ", "kkk", "tmj", "bom dia", "sim "}
-		}
-
-		local function detectRooms(text)
-			local low = " " .. string.lower(tostring(text)):gsub("%s+", " ") .. " "
-			local found = {}
-			for room, words in pairs(langWords) do
-				for _, w in ipairs(words) do
-					if string.find(low, w, 1, true) then
-						found[room] = true
-						break
-					end
-				end
-			end
-			return found
-		end
 
 		local header = mk("Frame", {Size=UDim2.new(1, 0, 0, 24), BackgroundTransparency=1, Parent=card})
 		mk("TextLabel", {Size=UDim2.new(0, 120, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg.Title or "Live Chat"), Parent=header})
@@ -723,13 +780,17 @@ end
 		local roomBar = mk("Frame", {Position=UDim2.new(0, 0, 0, 28), Size=UDim2.new(1, 0, 0, 26), BackgroundTransparency=1, Parent=card})
 		mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=roomBar})
 		local roomButtons = {}
-		local renderRoom
 		for idx, roomName in ipairs(roomNames) do
 			local rb = mk("TextButton", {AutomaticSize=Enum.AutomaticSize.X, Size=UDim2.new(0, 0, 1, 0), BackgroundTransparency=1, BorderSizePixel=0, Font=Enum.Font.GothamSemibold, TextSize=11, TextColor3=theme.subtext, Text=roomName, AutoButtonColor=false, LayoutOrder=idx, Parent=roomBar})
 			round(rb, 10); pad(rb, 10, 0, 10, 0)
 			roomButtons[roomName] = rb
 			rb.MouseButton1Click:Connect(function()
+				if state.room == roomName then return end
 				state.room = roomName
+				messages = {}
+				msgSeq = 0
+				sinceCursor = ""
+				updateRoomButtons()
 				renderRoom()
 			end)
 		end
@@ -748,15 +809,21 @@ end
 		end
 
 		local function makeRow(m, order)
-			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, LayoutOrder=order, Text=string.format('<font color="%s"><b>%s:</b></font> %s', m.author == myName and "#4da3ff" or "#9aa1ad", escapeRich(m.author), escapeRich(m.text)), Parent=list})
+			local gold = "#f5c451"
+			local who = tostring(m.author)
+			local alias = adminAlias[who:lower()]
+			local whoColor = m.ann and gold or (who == myName and "#4da3ff" or (alias and gold or "#9aa1ad"))
+			local label = alias and (alias .. " (" .. who .. ")") or who
+			local prefix = m.ann and "[Announcement] " or ""
+			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, LayoutOrder=order, Text=string.format('<font color="%s"><b>%s%s:</b></font> %s', whoColor, escapeRich(prefix), escapeRich(label), escapeRich(m.text)), Parent=list})
 		end
 
-		function renderRoom()
+		local function renderRoom()
 			for _, c in ipairs(list:GetChildren()) do
 				if c:IsA("TextLabel") then c:Destroy() end
 			end
 			if not state.on then
-				list.Visible = false; noteLbl.Visible = true; noteLbl.Text = "Chat is turned off. Press the Chat chip to enable mirroring."
+				list.Visible = false; noteLbl.Visible = true; noteLbl.Text = "Chat is turned off. Press the Chat chip to reconnect."
 				return
 			end
 			if state.hidden then
@@ -767,14 +834,11 @@ end
 			local n = 0
 			local start = math.max(1, #messages - 59)
 			for i = start, #messages do
-				local m = messages[i]
-				if state.room == "General" or (m.rooms and m.rooms[state.room]) then
-					n = n + 1
-					makeRow(m, n)
-				end
+				n = n + 1
+				makeRow(messages[i], n)
 			end
 			if n == 0 then
-				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=state.room == "General" and "No messages yet — say hi!" or ("No messages detected for this room yet."), Parent=list})
+				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text="No messages yet — say hi to the Riuu community!", Parent=list})
 			end
 			scrollBottom()
 		end
@@ -793,17 +857,18 @@ end
 			onChip.Text = state.on and "Chat On" or "Chat Off"
 			onChip.TextColor3 = state.on and theme.success or theme.danger
 			hiddenChip.TextColor3 = state.hidden and theme.warn or theme.subtext
-			local now = os.clock()
-			for seenName, seenAt in pairs(riuuSeen) do
-				if now - seenAt > 120 then riuuSeen[seenName] = nil end
+			if failCount == 0 then
+				onlineChip.Text = string.format("%d using Riuu", state.online)
+				onlineChip.TextColor3 = theme.success
+			else
+				onlineChip.Text = "Reconnecting..."
+				onlineChip.TextColor3 = theme.warn
 			end
-			local riuuCount = 1
-			for _ in pairs(riuuSeen) do riuuCount = riuuCount + 1 end
-			onlineChip.Text = string.format("%d using Riuu", riuuCount)
 		end
 
 		onChip.MouseButton1Click:Connect(function()
 			state.on = not state.on
+			sinceCursor = ""
 			updateChips()
 			renderRoom()
 		end)
@@ -826,15 +891,9 @@ end
 			scrollBottom()
 		end
 
-		local function addMessage(author, text)
+		local function addMessage(author, text, isAnn)
 			author = tostring(author or "?")
 			text = tostring(text or "")
-			if text:sub(-3) == CHAT_MARKER then
-				if author ~= myName then
-					riuuSeen[author] = os.clock()
-				end
-				text = text:sub(1, -4)
-			end
 			if text == "" then return end
 			local key = author .. "|" .. text
 			local now = os.clock()
@@ -842,13 +901,48 @@ end
 			lastKey, lastTime = key, now
 			if not state.on then return end
 			msgSeq = msgSeq + 1
-			local m = { author = author, text = text, rooms = detectRooms(text), seq = msgSeq }
+			local m = { author = author, text = text, ann = isAnn == true, seq = msgSeq }
 			messages[#messages + 1] = m
 			if #messages > 240 then table.remove(messages, 1) end
 			if state.hidden then return end
-			if state.room == "General" or m.rooms[state.room] then
-				appendRow(m)
+			appendRow(m)
+		end
+
+		local function applyState(data)
+			if type(data) ~= "table" or data.ok ~= true then return false end
+			state.online = tonumber(data.online) or state.online
+			adminAlias = {}
+			if type(data.admins) == "table" then
+				for _, a in ipairs(data.admins) do
+					if type(a) == "table" and type(a.name) == "string" then
+						adminAlias[a.name:lower()] = (type(a.alias) == "string" and a.alias ~= "") and a.alias or nil
+					end
+				end
 			end
+			if type(data.messages) == "table" then
+				for _, m in ipairs(data.messages) do
+					if type(m) == "table" and type(m.body) == "string" and m.body ~= "" then
+						addMessage(m.author, m.body)
+						if type(m.created_at) == "string" then sinceCursor = m.created_at end
+					end
+				end
+			end
+			if type(data.announcements) == "table" then
+				for _, m in ipairs(data.announcements) do
+					if type(m) == "table" and type(m.id) == "string" and not seenAnnounce[m.id] then
+						seenAnnounce[m.id] = true
+						local from = (type(m.alias) == "string" and m.alias ~= "") and m.alias or tostring(m.author or "Riuu")
+						addMessage(from, type(m.body) == "string" and m.body or "", true)
+						if firstLoadDone then
+							showAnnounce(from, m.body)
+						end
+					end
+				end
+			end
+			firstLoadDone = true
+			failCount = 0
+			updateChips()
+			return true
 		end
 
 		local box
@@ -857,16 +951,18 @@ end
 			if type(text) ~= "string" or text:gsub("%s+", "") == "" then return end
 			box.Text = ""
 			task.spawn(function()
-				local sent = sendGameChat(text .. CHAT_MARKER)
-				if not sent then
+				local data = riuuApi({ op = "send", room = state.room, key = myKey, name = myName, body = text })
+				if type(data) ~= "table" or data.ok ~= true then
+					local why = (type(data) == "table" and data.error == "slow_down") and "Slow down a little." or "Message not sent — relay unreachable."
 					pcall(function()
-						Lib:Notify({ Title = "Live Chat", Content = "Message not sent — this game uses a custom chat system." })
+						Lib:Notify({ Title = "Live Chat", Content = why })
 					end)
+					box.Text = text
 				end
 			end)
 		end
 
-		box = mk("TextBox", {Position=UDim2.new(0, 0, 1, -30), Size=UDim2.new(1, -74, 0, 28), BackgroundColor3=Color3.fromRGB(9, 10, 14), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Message in #general...", ClearTextOnFocus=false, Text="", Parent=card})
+		box = mk("TextBox", {Position=UDim2.new(0, 0, 1, -30), Size=UDim2.new(1, -74, 0, 28), BackgroundColor3=Color3.fromRGB(9, 10, 14), BorderSizePixel=0, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, PlaceholderText="Message the Riuu community...", ClearTextOnFocus=false, Text="", Parent=card})
 		round(box, 6)
 		local sendBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 1), Position=UDim2.new(1, 0, 1, -30), Size=UDim2.new(0, 66, 0, 28), BackgroundColor3=theme.accent, BorderSizePixel=0, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.text, Text="Send", AutoButtonColor=false, Parent=card})
 		round(sendBtn, 6); hoverTween(sendBtn)
@@ -876,47 +972,26 @@ end
 		end)
 
 		task.spawn(function()
-			pcall(function()
-				game:GetService("TextChatService").MessageReceived:Connect(function(msg)
-					pcall(function()
-						if msg and msg.TextSource and msg.Text and #tostring(msg.Text) > 0 then
-							addMessage(msg.TextSource.Name, msg.Text)
-						end
-					end)
-				end)
-			end)
-			pcall(function()
-				local function hook(pl)
-					pcall(function()
-						pl.Chatted:Connect(function(text)
-							addMessage(pl.Name, text)
-						end)
-					end)
-				end
-				for _, pl in ipairs(Players:GetPlayers()) do
-					hook(pl)
-				end
-				Players.PlayerAdded:Connect(hook)
-			end)
-			pcall(function()
-				Players.PlayerAdded:Connect(function() updateChips() end)
-				Players.PlayerRemoving:Connect(function() updateChips() end)
-			end)
-			task.spawn(function()
-				while card.Parent do
-					task.wait(30)
-					updateChips()
-				end
-			end)
-			addMessage("Riuu", "Welcome to Riuu Live Chat. General mirrors this server's in-game chat; the other rooms group messages by detected language.")
+			addMessage("Riuu", "Welcome to Riuu Live Chat — talk with other players using Riuu Hub around the world.")
 			updateChips()
 			updateRoomButtons()
 			renderRoom()
+			while card.Parent do
+				if state.on then
+					task.spawn(function()
+						local data = riuuApi({ op = "state", room = state.room, key = myKey, name = myName, since = sinceCursor })
+						if not applyState(data) then
+							failCount = failCount + 1
+							updateChips()
+						end
+					end)
+				end
+				task.wait(2.5)
+			end
 		end)
 
 		return card
 	end
-
 	local function makeForum(parent, cfg)
 		cfg = cfg or {}
 		local myName = (Players.LocalPlayer and Players.LocalPlayer.Name) or "Player"
@@ -1368,41 +1443,19 @@ end
 			Lib:Notify({ Title = "Admin", Content = tostring(content) })
 		end
 
-		local function sendChat(text)
-			text = tostring(text or "")
-			if text:gsub("%s+", "") == "" then return end
-			task.spawn(function()
-				local sent = sendGameChat(text .. CHAT_MARKER)
-				notify(sent and "Announcement sent to chat." or "Could not send chat message.")
-			end)
-		end
+		local myName = player.Name
+		local myKey = "u" .. tostring(player.UserId)
 
-		local function showBanner(text)
-			pcall(function()
-				local holder = (typeof(gethui) == "function" and gethui()) or player:FindFirstChildOfClass("PlayerGui")
-				if not holder then return end
-				for _, gui2 in ipairs(holder:GetChildren()) do
-					if gui2:IsA("ScreenGui") and gui2.Name == "RiuuBanner" then
-						gui2:Destroy()
-					end
+		local function sendAnnouncement(text)
+			task.spawn(function()
+				local data = riuuApi({ op = "announce", key = myKey, name = myName, body = text })
+				if type(data) == "table" and data.ok == true then
+					notify("Announcement sent to all Riuu users.")
+				elseif type(data) == "table" and data.error == "slow_down" then
+					notify("Slow down a little.")
+				else
+					notify("Announcement failed — relay unreachable or not admin.")
 				end
-				local gui = Instance.new("ScreenGui")
-				gui.Name = "RiuuBanner"
-				gui.ResetOnSpawn = false
-				gui.DisplayOrder = 600
-				gui.IgnoreGuiInset = false
-				gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-				gui.Parent = holder
-				local frame = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0), Position=UDim2.new(0.5, 0, 0, 12), Size=UDim2.new(0.62, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, Parent=gui})
-				round(frame, 10); strk(frame, theme.accent, 0.8); pad(frame, 14, 10, 14, 10)
-				mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=frame})
-				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, Text="RIUU ANNOUNCEMENT", LayoutOrder=1, Parent=frame})
-				mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamMedium, TextSize=14, TextColor3=theme.text, TextWrapped=true, Text=tostring(text or ""), LayoutOrder=2, Parent=frame})
-				task.delay(8, function()
-					if gui and gui.Parent then
-						gui:Destroy()
-					end
-				end)
 			end)
 		end
 
@@ -1455,31 +1508,102 @@ end
 
 		do
 			local body = category("Announcement", 2)
-			catLabel(body, "Send a message to every player in this server (chat + banner).", 1)
+			catLabel(body, "Send an announcement to every player using Riuu Hub worldwide (banner + sound).", 1)
 			local annBox = catInput(body, "Type your announcement...", 2)
-			catButton(body, "Send Announcement (Chat + Banner)", theme.accent, 3, function()
+			catButton(body, "Send Announcement (All Riuu Users)", theme.accent, 3, function()
 				local text = tostring(annBox.Text or "")
 				if text:gsub("%s+", "") == "" then
 					notify("Type a message first.")
 					return
 				end
-				sendChat("[RIUU] " .. text)
-				showBanner(text)
+				sendAnnouncement(text)
 				annBox.Text = ""
 			end)
-			catButton(body, "Show Banner Only", Color3.fromRGB(26, 29, 36), 4, function()
+			catButton(body, "Preview Banner Only", Color3.fromRGB(26, 29, 36), 4, function()
 				local text = tostring(annBox.Text or "")
 				if text:gsub("%s+", "") == "" then
 					notify("Type a message first.")
 					return
 				end
-				showBanner(text)
+				showAnnounce(RiuuIsOwner() and "Owner" or myName, text)
 				annBox.Text = ""
 			end)
 		end
 
+		if RiuuIsOwner() then
+			local body = category("Admin Manager", 3)
+			catLabel(body, "Owner only: promote players to Riuu admin by Roblox username. Admins can send announcements to everyone using the script.", 1)
+			local targetBox = catInput(body, "Roblox username (e.g. 28cellotzy)", 2)
+			local aliasBox = catInput(body, "Admin display name (optional)", 3)
+			local adminListLbl
+			local function applyAdmins(list)
+				if type(list) ~= "table" then
+					adminListLbl.Text = "Could not load admin list (relay offline)."
+					return
+				end
+				local parts = {}
+				for _, a in ipairs(list) do
+					if type(a) == "table" and type(a.name) == "string" then
+						parts[#parts + 1] = a.name .. ((type(a.alias) == "string" and a.alias ~= "") and (" (" .. a.alias .. ")") or "")
+					end
+				end
+				adminListLbl.Text = #parts > 0 and ("Admins: " .. table.concat(parts, ", ")) or "No admins set yet."
+			end
+			catButtonRow(body, 4,
+				"Set Admin", theme.success, function()
+					local t = tostring(targetBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+					if t == "" then
+						notify("Type the player's Roblox username first.")
+						return
+					end
+					local data = riuuApi({ op = "admins", action = "add", name = myName, target = t, alias = tostring(aliasBox.Text or "") })
+					if type(data) == "table" and data.ok == true then
+						notify("Admin set: " .. t)
+						targetBox.Text = ""
+						aliasBox.Text = ""
+						applyAdmins(data.admins)
+					else
+						notify("Failed — owner only or relay offline.")
+					end
+				end,
+				"Remove Admin", theme.danger, function()
+					local t = tostring(targetBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+					if t == "" then
+						notify("Type the player's Roblox username first.")
+						return
+					end
+					local data = riuuApi({ op = "admins", action = "remove", name = myName, target = t })
+					if type(data) == "table" and data.ok == true then
+						notify("Admin removed: " .. t)
+						targetBox.Text = ""
+						applyAdmins(data.admins)
+					else
+						notify("Failed — owner only or relay offline.")
+					end
+				end)
+			catButton(body, "Rename Admin Display Name", theme.accent, 5, function()
+				local t = tostring(targetBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+				if t == "" then
+					notify("Type the player's Roblox username first.")
+					return
+				end
+				local data = riuuApi({ op = "admins", action = "rename", name = myName, target = t, alias = tostring(aliasBox.Text or "") })
+				if type(data) == "table" and data.ok == true then
+					notify("Admin renamed: " .. t)
+					applyAdmins(data.admins)
+				else
+					notify("Failed — owner only or relay offline.")
+				end
+			end)
+			adminListLbl = catLabel(body, "Loading admins...", 6)
+			task.spawn(function()
+				local data = riuuApi({ op = "admins", name = myName })
+				applyAdmins(type(data) == "table" and data.ok == true and data.admins or nil)
+			end)
+		end
+
 		do
-			local body = category("Performance", 3)
+			local body = category("Performance", 4)
 			catLabel(body, "Change the FPS cap for this session.", 1)
 			local fpsBox = catInput(body, "FPS cap (1 - 999)", 2)
 			local function applyCap(n)
@@ -1509,7 +1633,7 @@ end
 		end
 
 		do
-			local body = category("Session", 4)
+			local body = category("Session", 5)
 			catButtonRow(body, 1,
 				"Rejoin Server", theme.accent, function()
 					notify("Rejoining...")
@@ -1550,7 +1674,7 @@ end
 		end
 
 		do
-			local body = category("Data", 5)
+			local body = category("Data", 6)
 			catLabel(body, "Danger zone — these wipe data saved on disk.", 1)
 			catButtonRow(body, 2,
 				"Clear UI Settings", theme.danger, function()
@@ -1586,7 +1710,7 @@ end
 		end
 
 		do
-			local body = category("UI", 6)
+			local body = category("UI", 7)
 			catButtonRow(body, 1,
 				"Reload Script", theme.accent, function()
 					if RIUU_SCRIPT_URL == "" then
@@ -5952,7 +6076,7 @@ do
 			pcall(function()
 				n15 = Stats.Network.ServerStats.Ping:GetValue()
 			end)
-			task.wait(math.max(0.3, n15 * 2.5 / 1000))
+			task.wait(math.max(0.15, n15 * 1.2 / 1000))
 
 			local t47 = {
 				Uid = p134
@@ -8667,6 +8791,10 @@ do
 				local v1081 = math.clamp(tonumber(senaV4Config.StealHoldSeconds) or 5, 1, 10)
 				local v1082 = p264.settleBonus and type(p265) == "table" and p264.settleBonus[p265.Uid]
 				local seconds = v1082 and v1082.untilAt > os.clock() and v1082.seconds or 0
+
+				if p264.config.stealMode == "Instant" then
+					return math.clamp(v1081 * 0.25, 0.5, 2.5) + seconds
+				end
 
 				return v1077(type(p265) == "table" and p265.AreaId, v1081) + seconds
 			end
@@ -11653,7 +11781,7 @@ do
 					u1448 = u1448 or os.clock() + v1449
 					p412.stats.lastResult = "Carry requested"
 					p412:_setStatus(lastCarryReject and "Waiting for carry · " .. lastCarryReject or "Waiting for carry confirmation")
-					task.wait(0.25)
+					task.wait(0.15)
 				end
 			end)
 		end
@@ -12045,7 +12173,7 @@ do
 						p428.settleBonus[p429] = nil
 					elseif p428.config.stealMode == "Instant" and p428.boostedUid ~= p429 then
 						p428.settleBonus[p429] = {
-							seconds = 2,
+							seconds = 0,
 							untilAt = os.clock() + 300
 						}
 					end
@@ -12089,6 +12217,9 @@ do
 					return v1538 ~= nil and p428:_isInSafeArea(v1538)
 				end
 				local function v1539(p434, p435, p436)
+					if p428.config.stealMode == "Instant" then
+						return p428:_glideRoot(p434, p435)
+					end
 					return p428:_walkTo(p434, p435, p436 or 4)
 				end
 				local function v1540(p437, p438, p439, p440)
@@ -12121,7 +12252,7 @@ do
 					return _walkTo(v1547, v1549, v1550, v1551)
 				end
 
-				local v1552 = p428.config.stealMode == "Fly" or p428.boostedUid == p429 and not senaV4Config.HelpFriend
+				local v1552 = p428.config.stealMode == "Fly" or p428.config.stealMode == "Instant" or p428.boostedUid == p429 and not senaV4Config.HelpFriend
 				local v1553 = v1552 and 0.15 or 0.4
 				local v1554 = v1552 and 0.45 or 0.85
 				local v1555 = v1524()
@@ -12412,7 +12543,7 @@ do
 
 				p428:_setStatus("Waiting for deposit")
 
-				local v1576 = os.clock() + 8
+				local v1576 = os.clock() + 15
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
@@ -31680,7 +31811,7 @@ do
 
 			t216.stealHold = v4794:AddSlider({
 				Title = "Grab Hold Seconds",
-				Content = "For Instant Teleport: seconds to hold above the egg before grabbing. Lower = faster steal.",
+				Content = "For Instant Teleport: hold time above the egg (0.5s - 2.5s). Lower = faster steal.",
 				Min = 1,
 				Max = 10,
 				Default = 5,
