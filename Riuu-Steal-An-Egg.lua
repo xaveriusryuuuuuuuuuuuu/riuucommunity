@@ -12461,9 +12461,45 @@ do
 					local v1575 = v1531()
 
 					if v1575 then
+						local v1574a = p428.records[p429] or v1523()
+						local v1574d = v1574a and v1574a.BottomCFrame
+						local v1574e = 0
+
+						if typeof(v1574d) == "CFrame" then
+							v1574e = (v1574d.Position - v1575.Position).Magnitude
+						end
+
 						p428:_glideRoot(v1575, function()
 							return not v1520() or not v1524()
 						end)
+
+						if v1520() and v1524() and not v1526() then
+							p428:_setStatus("Settling at base")
+
+							local v1574f = math.clamp(tonumber(senaV4Config.StealHoldSeconds) or 5, 1, 10)
+							local v1574g = os.clock() + math.clamp(v1574e / (16 * v1574f), 3, 150)
+							local v1574h = false
+
+							while v1520() and v1524() and not v1526() and os.clock() < v1574g do
+								local v1574i, v1574j = v1521()
+
+								if v1574i and v1574j then
+									p428:_stopHoverPad()
+
+									if not v1574h then
+										v1574h = true
+										p428:_groundSnap()
+
+										pcall(function()
+											v1574i.AssemblyLinearVelocity = Vector3.zero
+											v1574i.AssemblyAngularVelocity = Vector3.zero
+										end)
+									end
+								end
+
+								task.wait(0.1)
+							end
+						end
 					end
 				end
 
