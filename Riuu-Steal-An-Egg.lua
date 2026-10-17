@@ -89,6 +89,7 @@ end
 
 -- ==== Riuu UI Library (Simple & Aesthetic) ====
 local function RiuuCreateUI()
+	pcall(function() setfpscap(120) end)
 	local Tween = game:GetService("TweenService")
 	local UIS = game:GetService("UserInputService")
 	local HttpService = game:GetService("HttpService")
@@ -218,8 +219,13 @@ local function RiuuCreateUI()
 				math.clamp(math.floor(orig.R * 255 + 36), 0, 255),
 				math.clamp(math.floor(orig.G * 255 + 36), 0, 255),
 				math.clamp(math.floor(orig.B * 255 + 36), 0, 255))
-			inst.MouseEnter:Connect(function() inst.BackgroundColor3 = hot end)
-			inst.MouseLeave:Connect(function() inst.BackgroundColor3 = orig end)
+			local info = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			inst.MouseEnter:Connect(function()
+				Tween:Create(inst, info, {BackgroundColor3 = hot}):Play()
+			end)
+			inst.MouseLeave:Connect(function()
+				Tween:Create(inst, info, {BackgroundColor3 = orig}):Play()
+			end)
 		end)
 	end
 
@@ -422,27 +428,54 @@ end
 		local scroll = mk("ScrollingFrame", {Size=UDim2.new(1, -6, 1, -6), Position=UDim2.new(0, 3, 0, 3), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=3, ScrollBarImageColor3=theme.accent, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.Y, Parent=listFrame})
 		mk("UIListLayout", {Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=scroll})
 		local open = false
+		local setOpen
+		local optInfo = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local listTween
+		local function listTarget()
+			return UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6)
+		end
 		local function rebuild()
-			listFrame.Size = UDim2.new(1, -10, 0, math.min(#options, maxVisible) * 24 + 6)
+			listFrame.Size = listTarget()
 			for _, c in ipairs(scroll:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
 			for _, opt in ipairs(options) do
 				local ob = mk("TextButton", {Size=UDim2.new(1, 0, 0, 22), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(opt), Parent=scroll})
-				ob.MouseEnter:Connect(function() ob.TextColor3 = theme.accent end)
-				ob.MouseLeave:Connect(function() ob.TextColor3 = theme.text end)
+				ob.MouseEnter:Connect(function() Tween:Create(ob, optInfo, {TextColor3 = theme.accent}):Play() end)
+				ob.MouseLeave:Connect(function() Tween:Create(ob, optInfo, {TextColor3 = theme.text}):Play() end)
 				ob.MouseButton1Click:Connect(function()
 					if multi then
 						local found = false
 						for i, v in ipairs(value) do if v == opt then table.remove(value, i); found = true; break end end
 						if not found then value[#value+1] = opt end
 					else
-						value = opt; open = false; listFrame.Visible = false
+						value = opt; setOpen(false)
 					end
 					btn.Text = multi and (table.concat(value, ", ") or "") or value
 					if type(cfg.Callback) == "function" then cfg.Callback(value) end
 				end)
 			end
 		end
-		btn.MouseButton1Click:Connect(function() open = not open; listFrame.Visible = open; if open then rebuild() end end)
+		function setOpen(v)
+			if v == open then return end
+			open = v
+			if listTween then pcall(function() listTween:Cancel() end) end
+			if open then
+				rebuild()
+				listFrame.Visible = true
+				listFrame.Size = UDim2.new(1, -10, 0, 0)
+				listTween = Tween:Create(listFrame, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = listTarget()})
+				listTween:Play()
+			else
+				listTween = Tween:Create(listFrame, TweenInfo.new(0.11, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, -10, 0, 0)})
+				listTween.Completed:Connect(function()
+					if not open then
+						listFrame.Visible = false
+						listFrame.Size = listTarget()
+					end
+				end)
+				listTween:Play()
+			end
+		end
+		btn.MouseButton1Click:Connect(function() setOpen(not open) end)
 		local ctrl = {Value=value}
 		if multi then
 			local d = {}
@@ -729,11 +762,18 @@ end
 			gui.DisplayOrder = 600
 			gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 			gui.Parent = holder
-			local frame = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0), Position=UDim2.new(0.5, 0, 0, 12), Size=UDim2.new(0.62, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundColor3=theme.panelBg, Parent=gui})
+			local frame = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0), Position=UDim2.new(0.5, 0, 0, 12), Size=UDim2.new(0, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.XY, BackgroundColor3=theme.panelBg, Parent=gui})
 			strk(frame, theme.accent, 0.8); pad(frame, 14, 10, 14, 10)
-			mk("UIListLayout", {Padding=UDim.new(0, 4), SortOrder=Enum.SortOrder.LayoutOrder, Parent=frame})
-			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Left, Text="RIUU ANNOUNCEMENT  ·  " .. tostring(from or "Riuu"), LayoutOrder=1, Parent=frame})
-			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamMedium, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=tostring(body or ""), LayoutOrder=2, Parent=frame})
+			mk("UISizeConstraint", {MaxSize=Vector2.new(560, 100000), Parent=frame})
+			mk("UIListLayout", {Padding=UDim.new(0, 4), HorizontalAlignment=Enum.HorizontalAlignment.Center, SortOrder=Enum.SortOrder.LayoutOrder, Parent=frame})
+			local headRow = mk("Frame", {Size=UDim2.new(0, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.XY, BackgroundTransparency=1, BorderSizePixel=0, LayoutOrder=1, Parent=frame})
+			mk("UIListLayout", {Padding=UDim.new(0, 6), FillDirection=Enum.FillDirection.Horizontal, VerticalAlignment=Enum.VerticalAlignment.Center, SortOrder=Enum.SortOrder.LayoutOrder, Parent=headRow})
+			local logo = mk("ImageLabel", {Size=UDim2.new(0, 16, 0, 16), BackgroundTransparency=1, BorderSizePixel=0, Image="", LayoutOrder=1, Parent=headRow})
+			pcall(RiuuLogoApply, logo)
+			local v716a = mk("TextLabel", {Size=UDim2.new(0, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.XY, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=12, TextColor3=theme.accent, TextXAlignment=Enum.TextXAlignment.Center, TextWrapped=true, Text="RIUU ANNOUNCEMENT  ·  " .. tostring(from or "Riuu"), LayoutOrder=2, Parent=headRow})
+			mk("UISizeConstraint", {MaxSize=Vector2.new(500, 100000), Parent=v716a})
+			local v716b = mk("TextLabel", {Size=UDim2.new(0, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.XY, BackgroundTransparency=1, Font=Enum.Font.GothamMedium, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Center, TextWrapped=true, Text=tostring(body or ""), LayoutOrder=2, Parent=frame})
+			mk("UISizeConstraint", {MaxSize=Vector2.new(532, 100000), Parent=v716b})
 			playSound("announce")
 			task.delay(8, function()
 				if gui and gui.Parent then
@@ -757,6 +797,7 @@ end
 		local msgSeq = 0
 		local sinceCursor = ""
 		local adminAlias = {}
+		local roleByName = {}
 		local seenAnnounce = {}
 		local failCount = 0
 		local firstLoadDone = false
@@ -808,14 +849,42 @@ end
 			end)
 		end
 
+		local function roleTag(who)
+			local key = tostring(who):lower()
+			if key == tostring(RIUU_OWNER):lower() then return "OWNER", "#f5c451" end
+			if key == "riuu" then return nil, "#f5c451" end
+			local rl = roleByName[key]
+			if rl == "DONATUR" then return "DONATUR", "#4ade80" end
+			if rl == "ADMIN" then return "ADMIN", "#4da3ff" end
+			return "FREE", "#9aa1ad"
+		end
+
 		local function makeRow(m, order)
 			local gold = "#f5c451"
-			local who = tostring(m.author)
+			local who = tostring(m.real or m.author)
+			local tag, tagColor = roleTag(who)
 			local alias = adminAlias[who:lower()]
-			local whoColor = m.ann and gold or (who == myName and "#4da3ff" or (alias and gold or "#9aa1ad"))
 			local label = alias and (alias .. " (" .. who .. ")") or who
+			local nameColor
+			if who == myName then
+				nameColor = "#4da3ff"
+			elseif tag == "OWNER" or tag == nil then
+				nameColor = gold
+			elseif tag == "ADMIN" then
+				nameColor = "#4da3ff"
+			elseif tag == "DONATUR" then
+				nameColor = "#4ade80"
+			else
+				nameColor = "#c3cad6"
+			end
 			local prefix = m.ann and "[Announcement] " or ""
-			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, LayoutOrder=order, Text=string.format('<font color="%s"><b>%s%s:</b></font> %s', whoColor, escapeRich(prefix), escapeRich(label), escapeRich(m.text)), Parent=list})
+			local text
+			if tag then
+				text = string.format('<font color="%s"><b>[%s]</b></font> <font color="%s"><b>%s%s:</b></font> %s', tagColor, tag, nameColor, escapeRich(prefix), escapeRich(label), escapeRich(m.text))
+			else
+				text = string.format('<font color="%s"><b>%s%s:</b></font> %s', nameColor, escapeRich(prefix), escapeRich(label), escapeRich(m.text))
+			end
+			return mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, RichText=true, Font=Enum.Font.Gotham, TextSize=12, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, LayoutOrder=order, Text=text, Parent=list})
 		end
 
 		local function renderRoom()
@@ -891,17 +960,18 @@ end
 			scrollBottom()
 		end
 
-		local function addMessage(author, text, isAnn)
+		local function addMessage(author, text, isAnn, realAuthor)
 			author = tostring(author or "?")
 			text = tostring(text or "")
 			if text == "" then return end
+			local who = (type(realAuthor) == "string" and realAuthor ~= "") and realAuthor or author
 			local key = author .. "|" .. text
 			local now = os.clock()
 			if key == lastKey and now - lastTime < 1.5 then return end
 			lastKey, lastTime = key, now
 			if not state.on then return end
 			msgSeq = msgSeq + 1
-			local m = { author = author, text = text, ann = isAnn == true, seq = msgSeq }
+			local m = { author = author, text = text, ann = isAnn == true, real = who, seq = msgSeq }
 			messages[#messages + 1] = m
 			if #messages > 240 then table.remove(messages, 1) end
 			if state.hidden then return end
@@ -912,10 +982,16 @@ end
 			if type(data) ~= "table" or data.ok ~= true then return false end
 			state.online = tonumber(data.online) or state.online
 			adminAlias = {}
+			local rolesAdded = 0
 			if type(data.admins) == "table" then
 				for _, a in ipairs(data.admins) do
 					if type(a) == "table" and type(a.name) == "string" then
 						adminAlias[a.name:lower()] = (type(a.alias) == "string" and a.alias ~= "") and a.alias or nil
+						local rl = (type(a.role) == "string" and a.role == "donatur") and "DONATUR" or "ADMIN"
+						if roleByName[a.name:lower()] ~= rl then
+							roleByName[a.name:lower()] = rl
+							rolesAdded = rolesAdded + 1
+						end
 					end
 				end
 			end
@@ -932,7 +1008,7 @@ end
 					if type(m) == "table" and type(m.id) == "string" and not seenAnnounce[m.id] then
 						seenAnnounce[m.id] = true
 						local from = (type(m.alias) == "string" and m.alias ~= "") and m.alias or tostring(m.author or "Riuu")
-						addMessage(from, type(m.body) == "string" and m.body or "", true)
+						addMessage(from, type(m.body) == "string" and m.body or "", true, tostring(m.author or ""))
 						if firstLoadDone then
 							showAnnounce(from, m.body)
 						end
@@ -942,6 +1018,7 @@ end
 			firstLoadDone = true
 			failCount = 0
 			updateChips()
+			if rolesAdded > 0 then renderRoom() end
 			return true
 		end
 
@@ -1435,7 +1512,7 @@ end
 		mk("UIListLayout", {Padding=UDim.new(0, 8), SortOrder=Enum.SortOrder.LayoutOrder, Parent=card})
 
 		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 18), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, Text=tostring(cfg and cfg.Title or "Owner Tools"), LayoutOrder=1, Parent=card})
-		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text="Owner-only tools. Click a category to expand it.", LayoutOrder=2, Parent=card})
+		mk("TextLabel", {Size=UDim2.new(1, 0, 0, 14), BackgroundTransparency=1, Font=Enum.Font.Gotham, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, TextWrapped=true, Text=RiuuIsOwner() and "Owner-only tools. Click a category to expand it." or "Admin tools — announcements only. Click a category to expand it.", LayoutOrder=2, Parent=card})
 
 		local player = Players.LocalPlayer
 
@@ -1472,8 +1549,7 @@ end
 			head.MouseButton1Click:Connect(function()
 				open = not open
 				body.Visible = open
-				chev.Rotation = open and 90 or 0
-				chev.TextColor3 = open and theme.accent or theme.subtext
+				Tween:Create(chev, TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Rotation = open and 90 or 0, TextColor3 = open and theme.accent or theme.subtext}):Play()
 			end)
 			return body
 		end
@@ -1544,7 +1620,7 @@ end
 				local parts = {}
 				for _, a in ipairs(list) do
 					if type(a) == "table" and type(a.name) == "string" then
-						parts[#parts + 1] = a.name .. ((type(a.alias) == "string" and a.alias ~= "") and (" (" .. a.alias .. ")") or "")
+						parts[#parts + 1] = a.name .. (a.role == "donatur" and " [Donatur]" or "") .. ((type(a.alias) == "string" and a.alias ~= "") and (" (" .. a.alias .. ")") or "")
 					end
 				end
 				adminListLbl.Text = #parts > 0 and ("Admins: " .. table.concat(parts, ", ")) or "No admins set yet."
@@ -1595,13 +1671,45 @@ end
 					notify("Failed — owner only or relay offline.")
 				end
 			end)
-			adminListLbl = catLabel(body, "Loading admins...", 6)
+			catButtonRow(body, 6,
+				"Set Donatur", theme.success, function()
+					local t = tostring(targetBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+					if t == "" then
+						notify("Type the player's Roblox username first.")
+						return
+					end
+					local data = riuuApi({ op = "admins", action = "donatur", name = myName, target = t })
+					if type(data) == "table" and data.ok == true then
+						notify("Donatur set: " .. t)
+						targetBox.Text = ""
+						applyAdmins(data.admins)
+					else
+						notify("Failed — owner only or relay offline.")
+					end
+				end,
+				"Remove Donatur", theme.danger, function()
+					local t = tostring(targetBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
+					if t == "" then
+						notify("Type the player's Roblox username first.")
+						return
+					end
+					local data = riuuApi({ op = "admins", action = "undonatur", name = myName, target = t })
+					if type(data) == "table" and data.ok == true then
+						notify("Donatur removed: " .. t)
+						targetBox.Text = ""
+						applyAdmins(data.admins)
+					else
+						notify("Failed — owner only or relay offline.")
+					end
+				end)
+			adminListLbl = catLabel(body, "Loading admins...", 7)
 			task.spawn(function()
 				local data = riuuApi({ op = "admins", name = myName })
 				applyAdmins(type(data) == "table" and data.ok == true and data.admins or nil)
 			end)
 		end
 
+		if RiuuIsOwner() then
 		do
 			local body = category("Performance", 4)
 			catLabel(body, "Change the FPS cap for this session.", 1)
@@ -1731,6 +1839,7 @@ end
 					end
 				end)
 		end
+		end
 
 		return card
 	end
@@ -1746,16 +1855,23 @@ end
 		local content = mk("Frame", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=2, Parent=card})
 		mk("UIListLayout", {Padding=UDim.new(0, 6), SortOrder=Enum.SortOrder.LayoutOrder, Parent=content})
 		local expanded = startCollapsed == true
-		local function applySectionState()
+		local chevInfo = TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+		local function applySectionState(instant)
 			content.Visible = expanded
-			chevron.Rotation = expanded and 90 or 0
-			chevron.TextColor3 = expanded and theme.accent or theme.subtext
+			local rot = expanded and 90 or 0
+			local col = expanded and theme.accent or theme.subtext
+			if instant then
+				chevron.Rotation = rot
+				chevron.TextColor3 = col
+			else
+				Tween:Create(chevron, chevInfo, {Rotation = rot, TextColor3 = col}):Play()
+			end
 		end
 		headerBtn.MouseButton1Click:Connect(function()
 			expanded = not expanded
 			applySectionState()
 		end)
-		applySectionState()
+		applySectionState(true)
 		local section = {Value=nil}
 		function section:AddSubSection(text)
 			mk("TextLabel", {Size=UDim2.new(1, 0, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=11, TextColor3=theme.subtext, TextXAlignment=Enum.TextXAlignment.Left, Text=string.upper(tostring(text or "")), LayoutOrder=500, Parent=content})
@@ -1798,10 +1914,34 @@ end
 		mk("TextLabel", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -78, 0.5, 0), Size=UDim2.new(0, 220, 0, 20), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=10, TextColor3=RiuuIsOwner() and theme.accent or theme.subtext, TextXAlignment=Enum.TextXAlignment.Right, Text=(RiuuIsOwner() and "OWNER · " or "Owner · ") .. tostring(RIUU_OWNER), Parent=header})
 		local minBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -44, 0.5, 0), Size=UDim2.new(0, 26, 0, 26), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=16, TextColor3=theme.subtext, Text="–", AutoButtonColor=false, Parent=header})
 		local closeBtn = mk("TextButton", {AnchorPoint=Vector2.new(1, 0.5), Position=UDim2.new(1, -12, 0.5, 0), Size=UDim2.new(0, 26, 0, 26), BackgroundTransparency=1, Font=Enum.Font.GothamBold, TextSize=14, TextColor3=theme.text, Text="×", AutoButtonColor=false, Parent=header})
-		minBtn.MouseEnter:Connect(function() minBtn.TextColor3 = theme.text end)
-		minBtn.MouseLeave:Connect(function() minBtn.TextColor3 = theme.subtext end)
-		closeBtn.MouseEnter:Connect(function() closeBtn.TextColor3 = theme.accent end)
-		closeBtn.MouseLeave:Connect(function() closeBtn.TextColor3 = theme.text end)
+		local btnInfo = TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		minBtn.MouseEnter:Connect(function() Tween:Create(minBtn, btnInfo, {TextColor3 = theme.text}):Play() end)
+		minBtn.MouseLeave:Connect(function() Tween:Create(minBtn, btnInfo, {TextColor3 = theme.subtext}):Play() end)
+		closeBtn.MouseEnter:Connect(function() Tween:Create(closeBtn, btnInfo, {TextColor3 = theme.accent}):Play() end)
+		closeBtn.MouseLeave:Connect(function() Tween:Create(closeBtn, btnInfo, {TextColor3 = theme.text}):Play() end)
+		local mainSize = UDim2.new(0, 680, 0, 430)
+		local mainShown = true
+		local mainTween
+		local function setMainShown(v)
+			if v == mainShown then return end
+			mainShown = v
+			if mainTween then pcall(function() mainTween:Cancel() end) end
+			if v then
+				main.Visible = true
+				main.Size = UDim2.new(0, 0, 0, 0)
+				mainTween = Tween:Create(main, TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = mainSize})
+				mainTween:Play()
+			else
+				mainTween = Tween:Create(main, TweenInfo.new(0.13, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, 0, 0, 0)})
+				mainTween.Completed:Connect(function()
+					if not mainShown then
+						main.Visible = false
+						main.Size = mainSize
+					end
+				end)
+				mainTween:Play()
+			end
+		end
 		local tabBar = mk("ScrollingFrame", {Position=UDim2.new(0, 0, 0, 41), Size=UDim2.new(1, 0, 0, 25), BackgroundTransparency=1, BorderSizePixel=0, ScrollBarThickness=0, ScrollBarImageTransparency=1, CanvasSize=UDim2.new(0, 0, 0, 0), AutomaticCanvasSize=Enum.AutomaticSize.X, ScrollingDirection=Enum.ScrollingDirection.X, Parent=main})
 		mk("UIListLayout", {FillDirection=Enum.FillDirection.Horizontal, Padding=UDim.new(0, 2), SortOrder=Enum.SortOrder.LayoutOrder, Parent=tabBar})
 		tabBar.InputChanged:Connect(function(input)
@@ -1944,16 +2084,37 @@ end
 			pill.InputEnded:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 					if dragOn and not dragMoved then
-						main.Visible = not main.Visible
+						setMainShown(not mainShown)
 					end
 					dragOn = false
 				end
 			end)
 		end
-		minBtn.MouseButton1Click:Connect(function() main.Visible = false end)
+		minBtn.MouseButton1Click:Connect(function() setMainShown(false) end)
 		closeBtn.MouseButton1Click:Connect(function() pcall(function() gui:Destroy() end) end)
 		return win
 	end
+	task.spawn(function()
+		if RiuuIsOwner() then return end
+		local lp = Players.LocalPlayer
+		local nm = (lp and lp.Name) or ""
+		if nm == "" then return end
+		for _ = 1, 12 do
+			task.wait(5)
+			local ge = (getgenv and getgenv() or _G)
+			if type(ge.__RiuuBuildAdminTab) == "function" then
+				local data = riuuApi({ op = "admins", name = nm })
+				if type(data) == "table" and data.ok == true and type(data.admins) == "table" then
+					for _, a in ipairs(data.admins) do
+						if type(a) == "table" and type(a.name) == "string" and a.name:lower() == nm:lower() then
+							pcall(ge.__RiuuBuildAdminTab)
+							return
+						end
+					end
+				end
+			end
+		end
+	end)
 	return Lib
 	end
 
@@ -6038,6 +6199,60 @@ do
 			"CandidateGroundedSample"
 		}
 		local vector32 = Vector3.new(544.76, 71.5, -416.48)
+		local vector32NextSync = 0
+		local homePlotModel = nil
+		local function v722SyncHome(p274f)
+			local now = os.clock()
+
+			if p274f ~= true and now < vector32NextSync then
+				return
+			end
+
+			vector32NextSync = now + 2
+
+			pcall(function()
+				local slot = type(PlotState2.ResolveLocalSlot) == "function" and PlotState2.ResolveLocalSlot() or PlotState2.GetMySlot()
+				local folder = type(PlotState2.ResolveFolder) == "function" and PlotState2.ResolveFolder() or PlotState2.GetPlotsFolder()
+				local plot = folder and slot and folder:FindFirstChild(tostring(slot))
+
+				if plot then
+					homePlotModel = plot
+				end
+
+				local Position = nil
+				local ok2, data = pcall(PlotState2.ResolvePlot)
+
+				if ok2 and type(data) == "table" then
+					if typeof(data.RespawnPointCFrame) == "CFrame" then
+						Position = data.RespawnPointCFrame.Position
+					elseif typeof(data.Model) == "Instance" and data.Model then
+						local spawn = data.Model:FindFirstChild("Spawn", true)
+
+						Position = spawn and spawn:IsA("BasePart") and spawn.Position or nil
+					end
+				end
+
+				if not Position and plot then
+					local spawn = plot:FindFirstChild("Spawn", true)
+
+					if spawn and spawn:IsA("BasePart") then
+						Position = spawn.Position
+					else
+						Position = plot:GetPivot().Position
+					end
+				end
+
+				if typeof(Position) == "Vector3" and (Position - vector32).Magnitude > 2 then
+					vector32 = Vector3.new(Position.X, Position.Y, Position.Z)
+				end
+			end)
+		end
+
+		task.spawn(function()
+			task.wait(3)
+			v722SyncHome(true)
+		end)
+
 		local t44 = {
 			-364.3,
 			-367.21,
@@ -9179,6 +9394,8 @@ do
 
 		do
 			t46._resolveSafeCFrame = function(p279, p280)
+				v722SyncHome()
+
 				if not p280 then
 					return nil
 				end
@@ -10310,6 +10527,8 @@ do
 			return not v1296
 		end
 		t46._isInSafeArea = function(p340, p341)
+			v722SyncHome()
+
 			if not p341 then
 				return false
 			end
@@ -12544,6 +12763,8 @@ do
 				p428:_setStatus("Waiting for deposit")
 
 				local v1576 = os.clock() + 15
+				local v1576a = false
+				local v1576b = 0
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
@@ -12555,6 +12776,32 @@ do
 							v1539(v1579, function()
 								return not v1520() or v1526()
 							end)
+						end
+					elseif v1577 and v1578 then
+						if not v1576a then
+							v1576a = true
+							p428:_stopHoverPad()
+							pcall(function()
+								v1577.AssemblyLinearVelocity = Vector3.zero
+								v1577.AssemblyAngularVelocity = Vector3.zero
+							end)
+						elseif v1576b <= os.clock() and v1524() then
+							v1576b = os.clock() + 3
+							p428:_stopHoverPad()
+							p428:_groundSnap()
+
+							local v1576c = homePlotModel and homePlotModel.Parent and homePlotModel:FindFirstChild("TreadmillBottom", true)
+
+							if v1576c and v1576c:IsA("BasePart") then
+								pcall(function()
+									local v1576d = p428:_groundYAt(v1576c.Position.X, v1576c.Position.Z, nil) or v1576c.Position.Y + v1576c.Size.Y * 0.5
+									local v1576e = cFrameNew(v1576c.Position.X, v1576d + p428:_feetOffset(v1577, v1578), v1576c.Position.Z) * v1577.CFrame.Rotation
+
+									v1577.CFrame = v1576e
+									v1577.AssemblyLinearVelocity = Vector3.zero
+									v1577.AssemblyAngularVelocity = Vector3.zero
+								end)
+							end
 						end
 					end
 
@@ -13479,6 +13726,8 @@ do
 
 				return
 			end
+
+			v722SyncHome()
 
 			local v1662 = HumanoidRootPart.Position - vector32
 			local Magnitude = Vector2.new(v1662.X, v1662.Z).Magnitude
@@ -33345,7 +33594,10 @@ Missing: %s]], __RiuuV4ScrambleTradeIn.banner, __RiuuV4ScrambleTradeIn.status, m
 		}):AddSection("Support Riuu", true):AddSupportCard({})
 
 		do
-		if RiuuIsOwner() then
+		local adminTabBuilt = false
+		local function buildAdminTab()
+			if adminTabBuilt then return end
+			adminTabBuilt = true
 			local adminTab = v4742:AddTab({
 				Name = "Admin Panel",
 				Icon = "shield",
@@ -33361,8 +33613,12 @@ Missing: %s]], __RiuuV4ScrambleTradeIn.banner, __RiuuV4ScrambleTradeIn.status, m
 				Content = "1. Do not abuse admin commands.\n2. Do not share scripts.\n3. Respect other players.",
 			})
 
-			adminTab:AddAdminPanel({ Title = "Owner Tools" })
-
+			adminTab:AddAdminPanel({ Title = RiuuIsOwner() and "Owner Tools" or "Admin Tools" })
+		end
+		local geRiuu = (getgenv and getgenv() or _G)
+		geRiuu.__RiuuBuildAdminTab = buildAdminTab
+		if RiuuIsOwner() then
+			buildAdminTab()
 		end
 
 			local function v4904(p1104, p1105)
