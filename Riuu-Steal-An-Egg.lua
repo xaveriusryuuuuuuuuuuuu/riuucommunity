@@ -12471,7 +12471,6 @@ do
 
 				local v1576 = os.clock() + 15
 				local v1576a = false
-				local v1576b = 0
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
@@ -12496,23 +12495,6 @@ do
 								v1577.AssemblyLinearVelocity = Vector3.zero
 								v1577.AssemblyAngularVelocity = Vector3.zero
 							end)
-						elseif v1576b <= os.clock() and v1524() then
-							v1576b = os.clock() + 3
-							p428:_stopHoverPad()
-							p428:_groundSnap()
-
-							local v1576c = homePlotModel and homePlotModel.Parent and homePlotModel:FindFirstChild("TreadmillBottom", true)
-
-							if v1576c and v1576c:IsA("BasePart") then
-								pcall(function()
-									local v1576d = p428:_groundYAt(v1576c.Position.X, v1576c.Position.Z, nil) or v1576c.Position.Y + v1576c.Size.Y * 0.5
-									local v1576e = cFrameNew(v1576c.Position.X, v1576d + p428:_feetOffset(v1577, v1578), v1576c.Position.Z) * v1577.CFrame.Rotation
-
-									v1577.CFrame = v1576e
-									v1577.AssemblyLinearVelocity = Vector3.zero
-									v1577.AssemblyAngularVelocity = Vector3.zero
-								end)
-							end
 						end
 					end
 
