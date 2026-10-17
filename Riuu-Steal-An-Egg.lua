@@ -1905,6 +1905,16 @@ end
 		local gui = mk("ScreenGui", {Name="RiuuHubGui", ResetOnSpawn=false, DisplayOrder=500, IgnoreGuiInset=false, ZIndexBehavior=Enum.ZIndexBehavior.Sibling}, (gethui and gethui()) or Players.LocalPlayer:FindFirstChildOfClass("PlayerGui"))
 		local main = mk("Frame", {AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 680, 0, 430), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Active=true, Parent=gui})
 		round(main, 14)
+		local watermark = mk("ImageLabel", {Name="RiuuWatermark", AnchorPoint=Vector2.new(0.5, 0.5), Position=UDim2.new(0.5, 0, 0.5, 0), Size=UDim2.new(0, 215, 0, 215), BackgroundTransparency=1, Image="", ImageTransparency=0.5, ImageColor3=Color3.fromRGB(185, 195, 215), ZIndex=0, BorderSizePixel=0, Parent=main})
+		local wmLoaded = false
+		pcall(function() wmLoaded = RiuuLogoApply(watermark) == true end)
+		if not wmLoaded then
+			local f = watermark:FindFirstChild("RiuuLogoFallback")
+			if f then
+				f.TextColor3 = Color3.fromRGB(95, 115, 155)
+				f.TextTransparency = 0.5
+			end
+		end
 		local header = mk("Frame", {Size=UDim2.new(1, 0, 0, 40), BackgroundColor3=theme.windowBg, BorderSizePixel=0, Parent=main})
 		mk("Frame", {Size=UDim2.new(1, 0, 0, 1), Position=UDim2.new(0, 0, 1, -1), BackgroundColor3=theme.stroke, BorderSizePixel=0, Parent=header})
 		local titleLbl = mk("TextLabel", {Position=UDim2.new(0, 14, 0, 0), Size=UDim2.new(1, -220, 1, 0), BackgroundTransparency=1, Font=Enum.Font.GothamBlack, TextSize=15, TextColor3=theme.text, TextXAlignment=Enum.TextXAlignment.Left, TextTruncate=Enum.TextTruncate.AtEnd, Text=tostring(cfg.Title or "Riuu Hub"), Parent=header})
@@ -2968,7 +2978,7 @@ local senaV4Config = {
 	ScrambleTradeInReroll = false,
 	ScrambleTradeInBanners = {},
 	ScrambleBossAuto = false,
-	StealMode = "Instant",
+	StealMode = "Fly",
 	FlyAerial = false,
 	StealHoldSeconds = 5,
 	StealAreas = { "None" },
@@ -6199,60 +6209,6 @@ do
 			"CandidateGroundedSample"
 		}
 		local vector32 = Vector3.new(544.76, 71.5, -416.48)
-		local vector32NextSync = 0
-		local homePlotModel = nil
-		local function v722SyncHome(p274f)
-			local now = os.clock()
-
-			if p274f ~= true and now < vector32NextSync then
-				return
-			end
-
-			vector32NextSync = now + 2
-
-			pcall(function()
-				local slot = type(PlotState2.ResolveLocalSlot) == "function" and PlotState2.ResolveLocalSlot() or PlotState2.GetMySlot()
-				local folder = type(PlotState2.ResolveFolder) == "function" and PlotState2.ResolveFolder() or PlotState2.GetPlotsFolder()
-				local plot = folder and slot and folder:FindFirstChild(tostring(slot))
-
-				if plot then
-					homePlotModel = plot
-				end
-
-				local Position = nil
-				local ok2, data = pcall(PlotState2.ResolvePlot)
-
-				if ok2 and type(data) == "table" then
-					if typeof(data.RespawnPointCFrame) == "CFrame" then
-						Position = data.RespawnPointCFrame.Position
-					elseif typeof(data.Model) == "Instance" and data.Model then
-						local spawn = data.Model:FindFirstChild("Spawn", true)
-
-						Position = spawn and spawn:IsA("BasePart") and spawn.Position or nil
-					end
-				end
-
-				if not Position and plot then
-					local spawn = plot:FindFirstChild("Spawn", true)
-
-					if spawn and spawn:IsA("BasePart") then
-						Position = spawn.Position
-					else
-						Position = plot:GetPivot().Position
-					end
-				end
-
-				if typeof(Position) == "Vector3" and (Position - vector32).Magnitude > 2 then
-					vector32 = Vector3.new(Position.X, Position.Y, Position.Z)
-				end
-			end)
-		end
-
-		task.spawn(function()
-			task.wait(3)
-			v722SyncHome(true)
-		end)
-
 		local t44 = {
 			-364.3,
 			-367.21,
@@ -6291,7 +6247,7 @@ do
 			pcall(function()
 				n15 = Stats.Network.ServerStats.Ping:GetValue()
 			end)
-			task.wait(math.max(0.15, n15 * 1.2 / 1000))
+			task.wait(math.max(0.3, n15 * 2.5 / 1000))
 
 			local t47 = {
 				Uid = p134
@@ -9007,10 +8963,6 @@ do
 				local v1082 = p264.settleBonus and type(p265) == "table" and p264.settleBonus[p265.Uid]
 				local seconds = v1082 and v1082.untilAt > os.clock() and v1082.seconds or 0
 
-				if p264.config.stealMode == "Instant" then
-					return math.clamp(v1081 * 0.25, 0.5, 2.5) + seconds
-				end
-
 				return v1077(type(p265) == "table" and p265.AreaId, v1081) + seconds
 			end
 		end
@@ -9394,8 +9346,6 @@ do
 
 		do
 			t46._resolveSafeCFrame = function(p279, p280)
-				v722SyncHome()
-
 				if not p280 then
 					return nil
 				end
@@ -9880,22 +9830,6 @@ do
 
 			if not HumanoidRootPart or not Humanoid then
 				return false
-			end
-
-			if p309.config.stealMode == "Instant" then
-				pcall(v760, Character)
-				pcall(function()
-					Humanoid.AutoRotate = false
-				end)
-				p309:_startHoverPad()
-				pcall(function()
-					HumanoidRootPart.CFrame = p310
-					HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
-					HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
-				end)
-				p309:_syncHoverPad(p310.Position)
-
-				return true
 			end
 
 			pcall(v760, Character)
@@ -10527,8 +10461,6 @@ do
 			return not v1296
 		end
 		t46._isInSafeArea = function(p340, p341)
-			v722SyncHome()
-
 			if not p341 then
 				return false
 			end
@@ -12000,7 +11932,7 @@ do
 					u1448 = u1448 or os.clock() + v1449
 					p412.stats.lastResult = "Carry requested"
 					p412:_setStatus(lastCarryReject and "Waiting for carry · " .. lastCarryReject or "Waiting for carry confirmation")
-					task.wait(0.15)
+					task.wait(0.25)
 				end
 			end)
 		end
@@ -12392,7 +12324,7 @@ do
 						p428.settleBonus[p429] = nil
 					elseif p428.config.stealMode == "Instant" and p428.boostedUid ~= p429 then
 						p428.settleBonus[p429] = {
-							seconds = 0,
+							seconds = 2,
 							untilAt = os.clock() + 300
 						}
 					end
@@ -12436,9 +12368,6 @@ do
 					return v1538 ~= nil and p428:_isInSafeArea(v1538)
 				end
 				local function v1539(p434, p435, p436)
-					if p428.config.stealMode == "Instant" then
-						return p428:_glideRoot(p434, p435)
-					end
 					return p428:_walkTo(p434, p435, p436 or 4)
 				end
 				local function v1540(p437, p438, p439, p440)
@@ -12471,7 +12400,7 @@ do
 					return _walkTo(v1547, v1549, v1550, v1551)
 				end
 
-				local v1552 = p428.config.stealMode == "Fly" or p428.config.stealMode == "Instant" or p428.boostedUid == p429 and not senaV4Config.HelpFriend
+				local v1552 = p428.config.stealMode == "Fly" or p428.boostedUid == p429 and not senaV4Config.HelpFriend
 				local v1553 = v1552 and 0.15 or 0.4
 				local v1554 = v1552 and 0.45 or 0.85
 				local v1555 = v1524()
@@ -12762,9 +12691,7 @@ do
 
 				p428:_setStatus("Waiting for deposit")
 
-				local v1576 = os.clock() + 15
-				local v1576a = false
-				local v1576b = 0
+				local v1576 = os.clock() + 8
 
 				while v1520() and not v1526() and os.clock() < v1576 do
 					local v1577, v1578 = v1521()
@@ -12776,32 +12703,6 @@ do
 							v1539(v1579, function()
 								return not v1520() or v1526()
 							end)
-						end
-					elseif v1577 and v1578 then
-						if not v1576a then
-							v1576a = true
-							p428:_stopHoverPad()
-							pcall(function()
-								v1577.AssemblyLinearVelocity = Vector3.zero
-								v1577.AssemblyAngularVelocity = Vector3.zero
-							end)
-						elseif v1576b <= os.clock() and v1524() then
-							v1576b = os.clock() + 3
-							p428:_stopHoverPad()
-							p428:_groundSnap()
-
-							local v1576c = homePlotModel and homePlotModel.Parent and homePlotModel:FindFirstChild("TreadmillBottom", true)
-
-							if v1576c and v1576c:IsA("BasePart") then
-								pcall(function()
-									local v1576d = p428:_groundYAt(v1576c.Position.X, v1576c.Position.Z, nil) or v1576c.Position.Y + v1576c.Size.Y * 0.5
-									local v1576e = cFrameNew(v1576c.Position.X, v1576d + p428:_feetOffset(v1577, v1578), v1576c.Position.Z) * v1577.CFrame.Rotation
-
-									v1577.CFrame = v1576e
-									v1577.AssemblyLinearVelocity = Vector3.zero
-									v1577.AssemblyAngularVelocity = Vector3.zero
-								end)
-							end
 						end
 					end
 
@@ -13726,8 +13627,6 @@ do
 
 				return
 			end
-
-			v722SyncHome()
 
 			local v1662 = HumanoidRootPart.Position - vector32
 			local Magnitude = Vector2.new(v1662.X, v1662.Z).Magnitude
@@ -27247,7 +27146,7 @@ do
 				sortBtn.TextColor3 = v3976 and Color3.fromRGB(255, 255, 255) or v3697.btnText
 			end
 
-			local __RiuuV4StealMode = genv.__RiuuV4StealMode or "Instant"
+			local __RiuuV4StealMode = genv.__RiuuV4StealMode or "Fly"
 			local pairs_2 = pairs
 			local modeBtns = t175.modeBtns or {}
 
@@ -27682,8 +27581,8 @@ do
 				t175.modeBtns[p932] = TextButton2
 			end
 
-			v4034("Instant Teleport", "Instant")
-			v4034("High Speed User (Fly)", "Fly")
+			v4034("Low Speed User", "Instant")
+			v4034("High Speed User", "Fly")
 
 			local ScrollingFrame2 = Instance.new("ScrollingFrame")
 
@@ -32043,13 +31942,14 @@ do
 			})
 			t216.stealMode = v4794:AddDropdown({
 				Title = "Steal Mode",
-				Content = "Instant Teleport = blink to the egg and straight back home. High Speed User (Fly) = flies to the egg.",
+				Content = "If you have good speed better use High Speed User, but if you are newbie, use Low Speed User",
 				Options = {
-					"Instant Teleport",
+					"Low Speed User",
+					"High Speed User",
 					"High Speed User (Fly)"
 				},
 				MaxVisible = 3,
-				Default = "Instant Teleport",
+				Default = "High Speed User",
 				Multi = false,
 				Callback = v4732(v4536)
 			})
@@ -32059,8 +31959,8 @@ do
 			end
 
 			t216.stealHold = v4794:AddSlider({
-				Title = "Grab Hold Seconds",
-				Content = "For Instant Teleport: hold time above the egg (0.5s - 2.5s). Lower = faster steal.",
+				Title = "Low Speed Multiplier",
+				Content = "For Low Speed User. Higher = faster grab, lower = safer. Lower it if steals keep failing.",
 				Min = 1,
 				Max = 10,
 				Default = 5,
